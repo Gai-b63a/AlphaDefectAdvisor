@@ -1,6 +1,8 @@
 # AlphaDefect Advisor
 
-AlphaDefect Advisor gives **Japanese-language advice for solo Ironclad runs** in Slay the Spire 2. The in-game panel recommends a move and shows the model's selection probabilities for up to three actions. You choose the cards and targets and decide when to end your turn.
+AlphaDefect Advisor gives **advice for solo Ironclad runs** in Slay the Spire 2. The in-game panel recommends a move and shows the model's selection probabilities for up to three actions. You choose the cards and targets and decide when to end your turn.
+
+The v0.2.8 development build follows the language selected in the game. The panel supports English and Japanese and uses English for other languages. Card, enemy and item names come from the game. The v0.2.7 release displays advice in Japanese.
 
 The mod targets Steam's **public-beta branch, game version v0.114.0**. The panel starts at the center-right of the screen. Drag its header with the left mouse button to move it. The mod remembers the position for your next session.
 

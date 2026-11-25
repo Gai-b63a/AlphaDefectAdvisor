@@ -11,6 +11,10 @@ internal sealed class AdviceOverlay
         MouseFilter = Control.MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(380, 0),
         AutowrapMode = TextServer.AutowrapMode.WordSmart
     };
+    readonly Label handle = new() { MouseFilter = Control.MouseFilterEnum.Stop,
+        MouseDefaultCursorShape = Control.CursorShape.Move };
+    internal void RefreshHeader() => handle.Text = "⠿  " + AdvisorText.T("move");
+
     readonly ConfigFile settings = new();
     Vector2? preferred;
     Vector2 dragOffset;
@@ -22,9 +26,8 @@ internal sealed class AdviceOverlay
             ContentMarginLeft = 14, ContentMarginRight = 14, ContentMarginTop = 8, ContentMarginBottom = 10 };
         panel.AddThemeStyleboxOverride("panel", style);
         var column = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        var handle = new Label { Text = "⠿  助言パネルを移動", MouseFilter = Control.MouseFilterEnum.Stop,
-            MouseDefaultCursorShape = Control.CursorShape.Move };
-        var font = new SystemFont { FontNames = ["Yu Gothic UI", "Meiryo", "Hiragino Sans"] };
+        RefreshHeader();
+        var font = new SystemFont { FontNames = ["Yu Gothic UI", "Hiragino Sans", "Meiryo", "Arial"] };
         handle.AddThemeFontOverride("font", font);
         handle.AddThemeFontSizeOverride("font_size", 15);
         handle.GuiInput += input => {
@@ -60,7 +63,9 @@ internal sealed class AdviceOverlay
 
     void Place()
     {
-        var available = (panel.GetViewportRect().Size - panel.Size).Max(Vector2.Zero);
+        var viewport = panel.GetViewportRect().Size;
+        label.CustomMinimumSize = new Vector2(Math.Clamp(viewport.X - 32, 1, 460), 0);
+        var available = (viewport - panel.Size).Max(Vector2.Zero);
         var desired = preferred ?? new Vector2(available.X - 16, available.Y / 2);
         panel.Position = desired.Clamp(Vector2.Zero, available);
     }

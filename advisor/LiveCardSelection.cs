@@ -1,3 +1,4 @@
+using static AlphaDefectAdvisor.AdvisorText;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -52,7 +53,7 @@ public sealed partial class RunSession
             case NDeckCardSelectScreen: method = "FromDeckGeneric"; break;
             case NCombatPileCardSelectScreen: method = "FromCombatPile"; break;
             case NSimpleCardSelectScreen: method = "FromSimpleGrid"; break;
-            default: WaitReason = $"未対応のカード選択画面 ({type.Name})"; return null;
+            default: WaitReason = T("unsupported", type.Name); return null;
         }
 
         // Preview confirmation applies to an already chosen card, and can cover a visible grid.
@@ -64,7 +65,7 @@ public sealed partial class RunSession
             _ => false
         };
         if (!grid.IsVisibleInTree() || preview) {
-            WaitReason = "カードのプレビューを確認中";
+            WaitReason = T("cardPreview");
             return null;
         }
 
@@ -84,7 +85,7 @@ public sealed partial class RunSession
     {
         var type = typeof(NPlayerHand);
         if (ReadSelectionField<Control>(type, hand, "_upgradePreviewContainer").IsVisibleInTree()) {
-            WaitReason = "強化プレビューを確認中";
+            WaitReason = T("upgradePreview");
             return null;
         }
         var prefs = ReadSelectionField<CardSelectorPrefs>(type, hand, "_prefs");
@@ -104,7 +105,7 @@ public sealed partial class RunSession
         var type = typeof(NChooseABundleSelectionScreen);
         if (!ReadSelectionField<Control>(type, screen, "_bundleRow").IsVisibleInTree() ||
             ReadSelectionField<Control>(type, screen, "_bundlePreviewContainer").IsVisibleInTree()) {
-            WaitReason = "カードの束のプレビューを確認中";
+            WaitReason = T("bundlePreview");
             return null;
         }
         var bundles = ReadSelectionField<IReadOnlyList<IReadOnlyList<CardModel>>>(type, screen, "_bundles");
@@ -119,30 +120,30 @@ public sealed partial class RunSession
         for (int i = 0; i < bundles.Count; i++) {
             var cards = bundles[i];
             foreach (var card in cards) decision.Shown.Add((card, i == 0 ? Zone.Pack1 : Zone.Pack2, 0));
-            decision.Add(ActionKind.PickBundle, string.Join(" ＋ ", cards.Select(c => c.Title)), () => {},
+            decision.Add(ActionKind.PickBundle, string.Join(" + ", cards.Select(c => c.Title)), () => {},
                 a: cards.FirstOrDefault(), f0: i);
         }
         if (skip)
-            decision.Add(ActionKind.Leave, "スキップ", () => {});
+            decision.Add(ActionKind.Leave, T("skip"), () => {});
         return decision;
     }
 
     Decision? LiveCardChoices(IReadOnlyList<CardModel> cards, int min, int max, bool cancelable,
         SelectInfo info, IReadOnlySet<CardModel>? selected, bool upgrade, bool canConfirm = true)
     {
-        WaitReason = "選択できるカードを確認中";
+        WaitReason = T("cardsWait");
         _selecting = new PendingCardChoice(cards, min, max, cancelable, info);
         var decision = new Decision(DecisionKind.CardSelect) { Selected = selected?.Count ?? 0 };
         for (int i = 0; i < cards.Count; i++) {
             var card = cards[i];
             if (selected?.Contains(card) == true) { _selected.Add(i); continue; }
             if (decision.Selected >= max) continue;
-            decision.Add(ActionKind.SelectCard, upgrade ? $"{card.Title} を強化" : card.Title, () => {},
+            decision.Add(ActionKind.SelectCard, upgrade ? T("upgrade", card.Title) : card.Title, () => {},
                 a: card, b: upgrade ? Observation.UpgradedCopy(card) : null);
         }
         if (canConfirm && decision.Selected >= min)
-            decision.Add(ActionKind.ConfirmSelection, decision.Selected > 0 ? "選択を確定" : "スキップ", () => {});
-        if (cancelable && decision.Selected == 0) decision.Add(ActionKind.Leave, "キャンセル", () => {});
+            decision.Add(ActionKind.ConfirmSelection, decision.Selected > 0 ? T("confirm") : T("skip"), () => {});
+        if (cancelable && decision.Selected == 0) decision.Add(ActionKind.Leave, T("cancel"), () => {});
         return decision;
     }
 }

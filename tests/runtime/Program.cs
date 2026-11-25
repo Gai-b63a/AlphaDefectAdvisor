@@ -2,6 +2,12 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 
+LocalizationChecks.Run();
+if (args is ["--check-localization"]) {
+    Console.WriteLine("Localization checks passed.");
+    return;
+}
+
 // Use the actual packaged DLL. Only the upstream data HTTP responses are simulated.
 var package = Path.GetFullPath(args[0]);
 var fixture = Path.GetFullPath(args[1]);
