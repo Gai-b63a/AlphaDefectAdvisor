@@ -44,8 +44,48 @@ try {
     }
     Push-Location -LiteralPath (Split-Path -Parent $exe)
     try {
-        & $exe upload -w $Workspace
-        if ($LASTEXITCODE) { throw "ModUploader exit code $LASTEXITCODE. Check mod-uploader.log." }
+        $missingInterface = $false
+        & $exe upload -w $Workspace | ForEach-Object {
+            Write-Host $_
+            if ($_ -match 'Steam initialization failed! Result: k_ESteamAPIInitResult_FailedGeneric, message: No SteamClient023') {
+                $missingInterface = $true
+            }
+        }
+        if ($LASTEXITCODE -and $missingInterface -and $Mode -eq 'Create' -and !(Test-Path -LiteralPath $local)) {
+            # InitEx failed before CreateItem. Keep the mutex throughout the handoff.
+            Remove-Item -LiteralPath $pending
+            $account = Read-Host 'Enter your Steam account login name to publish with SteamCMD (blank to cancel)'
+            if ([string]::IsNullOrWhiteSpace($account)) { return }
+            if ($account -notmatch '^[a-zA-Z0-9_]+$') { throw 'Expected a Steam account login name.' }
+            $dir = Join-Path $env:LOCALAPPDATA 'AlphaDefectAdvisor/publisher/steamcmd'
+            $client = Join-Path $dir 'steamcmd.exe'
+            if (!(Test-Path -LiteralPath $client -PathType Leaf)) {
+                [IO.Directory]::CreateDirectory($dir) | Out-Null
+                $zip = Join-Path $dir 'steamcmd.zip'
+                Invoke-WebRequest 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip' -OutFile $zip
+                Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force
+            }
+            for ($attempt = 1; $attempt -le 4; $attempt++) {
+                $bootstrap = Start-Process -FilePath $client -ArgumentList '+quit' -WorkingDirectory $dir -WindowStyle Hidden -Wait -PassThru
+                if ($bootstrap.ExitCode -eq 0) { break }
+                if ($attempt -eq 4) { throw 'SteamCMD initialization failed before upload.' }
+                Start-Sleep -Seconds 3
+            }
+            $vdf = Join-Path (Split-Path -Parent $Workspace) 'first-workshop-item.vdf'
+            & $Python -I "$PSScriptRoot/tools/steam_release.py" prepare-create-vdf $vdf --workspace $Workspace
+            if ($LASTEXITCODE) { throw 'Could not prepare upload settings.' }
+            [IO.File]::WriteAllText($pending, [DateTime]::UtcNow.ToString('o'))
+            Push-Location -LiteralPath $dir
+            try {
+                & $client +login $account +workshop_build_item $vdf +quit
+                if ($LASTEXITCODE) { throw "SteamCMD failed. Check your Steam items and $vdf before retrying." }
+            } finally { Pop-Location }
+            $idMatch = [regex]::Match([IO.File]::ReadAllText($vdf), '(?i)"publishedfileid"\s+"([1-9][0-9]*)"')
+            if (!$idMatch.Success) { throw 'SteamCMD did not return an item ID. Check Steam before retrying.' }
+            [IO.File]::WriteAllText($local, $idMatch.Groups[1].Value)
+        } elseif ($LASTEXITCODE) {
+            throw "ModUploader exit code $LASTEXITCODE. Check mod-uploader.log."
+        }
     } finally { Pop-Location }
     $published = ([IO.File]::ReadAllText($local)).Trim()
     if ($published -notmatch '^[1-9][0-9]*$' -or ![uint64]::TryParse($published, [ref]([uint64]0)) -or ($ids.Count -and $ids[0] -ne $published)) {
