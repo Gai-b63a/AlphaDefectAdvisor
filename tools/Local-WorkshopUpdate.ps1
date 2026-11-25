@@ -33,7 +33,7 @@ try {
     }
     if (!(Test-Path $config) -or $Account -or $GameAssemblyDir) {
         if (!$GameAssemblyDir) { $GameAssemblyDir = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64' }
-        if ((Get-FileHash (Join-Path $GameAssemblyDir 'sts2.dll')).Hash -ne '62ECBE91093E1FA862DE4329AAC865209DCB297804CAF0F0520D92D8C0B4A9C3') { throw 'Expected game v0.113.1. Specify -GameAssemblyDir for a different Steam library.' }
+        if ((Get-FileHash (Join-Path $GameAssemblyDir 'sts2.dll')).Hash -ne 'DDCEB87905B6096DEB7BE975922E24A53992453675DF26DF545B1C46B1826C5D') { throw 'Expected game v0.114.0. Specify -GameAssemblyDir for a different Steam library.' }
         if (!$Account) {
             $history = Join-Path $store 'steamcmd/logs/console_log.txt'
             if (Test-Path $history) {

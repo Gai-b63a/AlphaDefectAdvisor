@@ -1,5 +1,5 @@
 param(
-    [string]$GameAssemblyDir = (Join-Path (Split-Path -Parent $PSScriptRoot) 'runtime/game/v0.113.1'),
+    [string]$GameAssemblyDir = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64',
     [string]$BuildPython = 'python',
     [string]$Wheelhouse,
     [string]$CrtDir,
@@ -12,8 +12,8 @@ $upstream = Join-Path $root 'upstream'
 $project = Join-Path $root 'advisor'
 $source = Join-Path $upstream 'engine/Sts2Headless/Engine/RunSession.cs'
 $gameDll = Join-Path $GameAssemblyDir 'sts2.dll'
-if ((Get-FileHash $gameDll).Hash -ne '62ECBE91093E1FA862DE4329AAC865209DCB297804CAF0F0520D92D8C0B4A9C3') {
-    throw 'Expected Slay the Spire 2 v0.113.1.'
+if ((Get-FileHash $gameDll).Hash -ne 'DDCEB87905B6096DEB7BE975922E24A53992453675DF26DF545B1C46B1826C5D') {
+    throw 'Expected Slay the Spire 2 v0.114.0.'
 }
 # Compile the live adapter with a partial declaration, leaving the upstream checkout untouched.
 $original = [IO.File]::ReadAllText($source)
@@ -21,6 +21,15 @@ $adapted = $original.Replace('public sealed class RunSession : IDisposable', 'pu
 if (!$adapted.Contains('public sealed partial class RunSession : IDisposable')) { throw 'Unsupported upstream RunSession.' }
 New-Item -Type Directory -Force "$project/obj" | Out-Null
 [IO.File]::WriteAllText("$project/obj/LiveRunSession.cs",$adapted)
+# Adapt the pinned observation encoder to the retail v0.114.0 API.
+$obs = Join-Path $upstream 'engine/Sts2Headless/Engine/Obs'
+$fool = [IO.File]::ReadAllText("$obs/Characters/Fool.cs")
+$fool = $fool.Replace('arrows.Count(a => a.Status == ArrowStatus.Destroyed)', '0')
+$fool = $fool.Replace('MegaCrit.Sts2.Core.Commands.MelodyCmd.MelodyCardsPlayedThisTurn(me)',
+    'CombatManager.Instance.History.CardPlaysStarted.Count(e => e.HappenedThisTurn(cs) && e.CardPlay.Player == me && IsMelody(e.CardPlay.Card))')
+[IO.File]::WriteAllText("$project/obj/LiveFool.cs", $fool)
+$gains = [IO.File]::ReadAllText("$obs/Gains26.cs").Replace('FreeCardPower', 'EnsemblePower')
+[IO.File]::WriteAllText("$project/obj/LiveGains26.cs", $gains)
 if ($RuntimeArtifactDir) {
     if ($RuntimeArchive) { throw 'Choose either RuntimeArtifactDir or RuntimeArchive.' }
     $stamp = Get-Content -LiteralPath (Join-Path $RuntimeArtifactDir 'runtime.json') -Raw | ConvertFrom-Json
