@@ -41,8 +41,37 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  runtime:
+  mac-runtime:
     needs: upstream
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: upstream-source-${{ github.sha }}
+          path: upstream
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.9.12'
+      - name: Package relocatable Apple Silicon interpreter and CPU model
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download weights-v6 --repo hmty-CHEN/AlphaDefect-Public --pattern ironclad_ema_v24782.pt
+          uv python install 3.12.12
+          "$(uv python find --managed-python 3.12.12)" -I tools/build_macos_runtime.py artifact/osx-arm64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-runtime-${{ github.sha }}
+          path: artifact/osx-arm64.zip
+          compression-level: 0
+          retention-days: 2
+
+  runtime:
+    needs: [upstream, mac-runtime]
     runs-on: windows-2022
     timeout-minutes: 45
     defaults:
@@ -64,8 +93,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download weights-v6 --repo hmty-CHEN/AlphaDefect-Public --pattern ironclad_ema_v24782.pt
-      - name: Build private CPU runtime
-        run: python -I tools/build_runtime.py artifact/runtime.zip
+      - uses: actions/download-artifact@v4
+        with:
+          name: mac-runtime-${{ github.sha }}
+          path: platforms
+      - name: Build private CPU runtime and assemble both platforms
+        run: |
+          python -I tools/build_runtime.py platforms/win-x64.zip
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force artifact | Out-Null
+          [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path platforms), "$pwd/artifact/runtime.zip", [IO.Compression.CompressionLevel]::NoCompression, $false)
       - name: Verify payload and record source revision
         run: |
           python -I tools/check_workshop.py --runtime artifact/runtime.zip
@@ -80,9 +117,45 @@ jobs:
           compression-level: 0
           retention-days: 14
 
+  vm-runtime-test:
+    needs: runtime
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: hmty-CHEN/AlphaDefect-Public
+          ref: 800db3039162647bf0ad13ed379f155cc5806f5f
+          path: fixtures
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /engine/catalog/
+            /python/sts2rl/enchant_effects.json
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: workshop-runtime-${{ github.sha }}
+          path: package
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Install into a clean user directory and start the packaged model offline
+        shell: pwsh
+        run: |
+          $env:PROBE_PAYLOAD_HASH = (Get-FileHash package/runtime.zip).Hash
+          dotnet build tests/runtime/RuntimeCheck.csproj -c Release -p:VmProbe=true
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet tests/runtime/bin/Release/net9.0/RuntimeCheck.dll package fixtures "$env:RUNNER_TEMP/Advisor VM"
+
   release:
     if: github.ref == 'refs/heads/main'
-    needs: [upstream, runtime]
+    needs: [upstream, runtime, vm-runtime-test]
     runs-on: ubuntu-latest
     permissions:
       contents: write

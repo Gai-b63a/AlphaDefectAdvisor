@@ -13,6 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 WEIGHT_HASH = "78ba58312335b1a49823fdaf6aa263ee46f9dae46b5d4753bc609eb671588f20"
 
 
+def write_model(out, weight):
+    for f in sorted((ROOT / "upstream/python").glob("*/*.py")):
+        out.write(f, f.relative_to(ROOT).as_posix())
+    for rel in ("upstream/tools/ability_test.py", "upstream/engine/game_version.txt", "advisor/companion.py"):
+        out.write(ROOT / rel, rel)
+    out.write(weight, weight.name)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output", type=Path)
@@ -72,11 +80,7 @@ def main():
                                 continue
                         with source.open(member) as src, out.open("python/Lib/site-packages/" + dest, "w") as dst:
                             shutil.copyfileobj(src, dst, 1024 * 1024)
-            for f in sorted((ROOT / "upstream/python").glob("*/*.py")):
-                out.write(f, f.relative_to(ROOT).as_posix())
-            for rel in ("upstream/tools/ability_test.py", "upstream/engine/game_version.txt", "advisor/companion.py"):
-                out.write(ROOT / rel, rel)
-            out.write(weight, weight.name)
+            write_model(out, weight)
         os.replace(payload, args.output)
 
 

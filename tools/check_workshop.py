@@ -2,6 +2,8 @@
 import argparse
 import hashlib
 import json
+import shutil
+import tempfile
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
 
@@ -10,12 +12,24 @@ import_path.insert(0, str(Path(__file__).resolve().parent))
 from build_runtime import WEIGHT_HASH
 
 
-def verify_runtime(archive):
-    required = {"python/python.exe", "python/python312._pth", "python/msvcp140.dll",
-                "python/LICENSE.txt", "python/Lib/site-packages/torch/lib/torch_cpu.dll",
-                "advisor/companion.py", "ironclad_ema_v24782.pt", "upstream/tools/ability_test.py"}
+def verify_runtime(archive, platform=None):
     with ZipFile(archive) as payload:
         names = set(payload.namelist())
+        if platform is None and "win-x64.zip" in names:
+            if sorted(payload.namelist()) != ["osx-arm64.zip", "win-x64.zip"]:
+                raise ValueError("Expected exactly two platform archives")
+            for rid in ("win-x64", "osx-arm64"):
+                with tempfile.TemporaryFile() as inner, payload.open(rid + ".zip") as source:
+                    shutil.copyfileobj(source, inner)
+                    verify_runtime(inner, rid)
+            return
+        required = {"advisor/companion.py", "ironclad_ema_v24782.pt", "upstream/tools/ability_test.py"}
+        if platform == "osx-arm64":
+            required.update({"python/bin/python3.12", "python/lib/libpython3.12.dylib",
+                             "python/lib/python3.12/site-packages/torch/lib/libtorch_cpu.dylib"})
+        else:
+            required.update({"python/python.exe", "python/python312._pth", "python/msvcp140.dll",
+                             "python/LICENSE.txt", "python/Lib/site-packages/torch/lib/torch_cpu.dll"})
         if required - names:
             raise ValueError(f"Missing runtime files: {sorted(required - names)}")
         if len(names) != len(payload.infolist()):

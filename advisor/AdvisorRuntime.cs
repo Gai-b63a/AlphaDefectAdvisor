@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -28,6 +29,9 @@ internal static class AdvisorRuntime
     // Each revision gets its own directory. Only a complete installation becomes visible.
     internal static async Task<string> InstallAsync(string packageDir, string cache, HttpClient client)
     {
+        bool mac = OperatingSystem.IsMacOS() && RuntimeInformation.OSArchitecture == Architecture.Arm64;
+        if (!mac && !(OperatingSystem.IsWindows() && RuntimeInformation.OSArchitecture == Architecture.X64))
+            throw new PlatformNotSupportedException("対応環境は Windows x64 と macOS arm64 です");
         Directory.CreateDirectory(cache);
         string home = Path.Combine(cache, PayloadInfo.Hash[..24]);
         if (Directory.Exists(home)) {
@@ -41,7 +45,23 @@ internal static class AdvisorRuntime
                 if (Convert.ToHexString(await SHA256.HashDataAsync(file)) != PayloadInfo.Hash)
                     throw new InvalidDataException("配布ファイルの照合に失敗しました");
                 file.Position = 0;
-                ZipFile.ExtractToDirectory(file, staging);
+                using var archive = new ZipArchive(file, ZipArchiveMode.Read);
+                var payload = archive.GetEntry(mac ? "osx-arm64.zip" : "win-x64.zip");
+                if (payload != null) {
+                    // A seekable file keeps large inference libraries out of managed memory.
+                    string inner = Path.Combine(staging, "platform.zip");
+                    await using (var destination = File.Create(inner))
+                    using (var source = payload.Open()) await source.CopyToAsync(destination);
+                    ZipFile.ExtractToDirectory(inner, staging);
+                    File.Delete(inner);
+                } else if (!mac && archive.GetEntry("python/python.exe") != null) {
+                    archive.ExtractToDirectory(staging); // Windows-only development packages and v0.2.1.
+                } else {
+                    throw new InvalidDataException("この配布物に対応する推論環境がありません");
+                }
+                if (OperatingSystem.IsMacOS())
+                    File.SetUnixFileMode(Path.Combine(staging, "python/bin/python3.12"),
+                        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             }
             try { Directory.Move(staging, home); }
             catch (IOException) when (Directory.Exists(home)) { /* Another game instance installed it. */ }
@@ -73,11 +93,11 @@ internal static class AdvisorRuntime
 
     internal static Process StartWorker(string home)
     {
-        var info = new ProcessStartInfo(Path.Combine(home, "python", "python.exe")) {
+        var info = new ProcessStartInfo(Path.Combine(home, OperatingSystem.IsMacOS() ? "python/bin/python3.12" : "python/python.exe")) {
             WorkingDirectory = home, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardInput = true, RedirectStandardOutput = true, StandardInputEncoding = new UTF8Encoding(false)
         };
-        info.Environment["PATH"] = Environment.SystemDirectory;
+        info.Environment["PATH"] = OperatingSystem.IsMacOS() ? "/usr/bin:/bin" : Environment.SystemDirectory;
         foreach (var arg in new[] { "-B", "-I", "-X", "utf8", Path.Combine(home, "advisor", "companion.py") })
             info.ArgumentList.Add(arg);
         return Process.Start(info) ?? throw new IOException("推論プロセスを開始できません");

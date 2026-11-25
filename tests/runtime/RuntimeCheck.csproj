@@ -5,4 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(VmProbe)' == 'true'">
+    <DefineConstants>$(DefineConstants);VM_PROBE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(VmProbe)' == 'true'">
+    <Compile Include="../../advisor/AdvisorRuntime.cs" />
+  </ItemGroup>
 </Project>

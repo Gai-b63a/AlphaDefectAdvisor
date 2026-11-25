@@ -6,7 +6,11 @@ using System.Reflection;
 var package = Path.GetFullPath(args[0]);
 var fixture = Path.GetFullPath(args[1]);
 var cache = Path.GetFullPath(args[2]);
+#if VM_PROBE
+var type = typeof(AlphaDefectAdvisor.AdvisorRuntime);
+#else
 var type = Assembly.LoadFrom(Path.Combine(package, "AlphaDefectAdvisor.dll")).GetType("AlphaDefectAdvisor.AdvisorRuntime", true)!;
+#endif
 var install = type.GetMethod("InstallAsync", BindingFlags.Static | BindingFlags.NonPublic)!;
 var start = type.GetMethod("StartWorker", BindingFlags.Static | BindingFlags.NonPublic)!;
 Task<string> Install(HttpClient client) => (Task<string>)install.Invoke(null, [package, cache, client])!;
@@ -31,7 +35,7 @@ try {
             throw new EndOfStreamException("Packaged worker stopped"));
     }
     worker.StandardInput.Close();
-    await worker.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15));
+    await worker.WaitForExitAsync().WaitAsync(TimeSpan.FromMinutes(2));
     if (worker.ExitCode != 0) throw new Exception($"Worker exit code {worker.ExitCode}");
 } finally {
     if (!worker.HasExited) worker.Kill();
@@ -53,3 +57,15 @@ sealed class Fixture(string root) : HttpMessageHandler
         return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Corrupt ? [0] : bytes) };
     }
 }
+
+
+#if VM_PROBE
+namespace AlphaDefectAdvisor
+{
+    internal static class PayloadInfo
+    {
+        internal static readonly string Hash = Environment.GetEnvironmentVariable("PROBE_PAYLOAD_HASH")
+            ?? throw new InvalidOperationException("Missing test payload checksum");
+    }
+}
+#endif
