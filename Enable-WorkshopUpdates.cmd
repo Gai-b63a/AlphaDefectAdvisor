@@ -1,8 +1,3 @@
 @echo off
-setlocal
-set "advisorPwsh=pwsh.exe"
-if exist "%ProgramFiles%\PowerShell\7\pwsh.exe" set "advisorPwsh=%ProgramFiles%\PowerShell\7\pwsh.exe"
-"%advisorPwsh%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0Local-WorkshopUpdate.ps1" -Install
-set "result=%errorlevel%"
+echo Scheduled updates have been retired. Run Update-Workshop.cmd when you want to publish.
 pause
-exit /b %result%

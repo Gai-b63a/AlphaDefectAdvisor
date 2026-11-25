@@ -28,11 +28,9 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 初回は Steam にログインし、検証済みの `dist/workshop` フォルダーを Windows のエクスプローラーから公式の `ModUploader.exe` にドラッグ＆ドロップして公開します。成功時に生成される `mod_id.txt` を、このリポジトリの `workshop/mod_id.txt` として `main` に登録してください。ファイルの中身は公開アイテムの数値 ID だけです。
 
-自動更新を有効にするには、初回投稿に使った Windows ユーザーで `Enable-WorkshopUpdates.cmd` を一度ダブルクリックします。タスク スケジューラの `AlphaDefect Advisor Workshop Update` がログオン時と30分ごとに GitHub の最新リリースを確認します。この PC の .NET 9 SDK、Python 3.11 以上、PowerShell 7、対応ゲーム版を使用します。ゲームの保存場所が異なる場合は `Local-WorkshopUpdate.ps1 -Install -GameAssemblyDir <ディレクトリ>` で指定できます。
+Mod のバージョンを上げて main に反映すると GitHub Actions がリリースを作成します。Workshop に公開したいタイミングで、初回投稿に使った Windows ユーザーで `Update-Workshop.cmd` を実行してください。最新リリースを検証し、Mod をビルドして既存アイテム `3845626411` に一度送信します。公開用 PC では .NET 9 SDK、Python 3.11 以上、PowerShell 7、対応ゲーム版を使用します。
 
-メンテナーが `main` で Mod のバージョンを上げると、GitHub Actions がローカルビルド用のソースとランタイムを GitHub Releases に公開します。ローカルのタスクはバージョンとチェックサムを照合し、Mod をビルド・検証して、保存済みの SteamCMD ログインでアイテム `3845626411` を更新します。Steam のパスワードを GitHub に登録する必要はありません。
-
-状態は `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log`、最後に成功したバージョンは `published-version.txt` に記録します。投稿結果が確認できない場合は自動投稿を一時停止します。Steam 側の変更履歴を確認し、必要なら初回投稿に使った SteamCMD でログインし直して終了し、登録用 CMD を再実行します。停止・削除は Windows のタスク スケジューラから行えます。
+以前に定期タスクを登録した場合は、Windows のタスク スケジューラで `AlphaDefect Advisor Workshop Update` を無効にしてください。送信結果は `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log` に記録します。送信結果が不明な場合は Workshop の変更履歴を確認し、公開版と published-version.txt を照合してから update-needs-attention.txt を削除してください。
 
 [公式 ModUploader](https://github.com/megacrit/sts2-mod-uploader/releases)
 
