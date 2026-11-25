@@ -24,6 +24,34 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 `Build-Advisor.ps1` は `dist/workshop` に投稿用ワークスペースを作ります。ビルド用 Python は `-BuildPython`、取得済みの wheel は `-Wheelhouse`、CRT の場所は `-CrtDir` で指定できます。
 
+## Steam ワークショップへの公開（メンテナー向け）
+
+1. GitHub Actions の **Prepare Steam Workshop release** を実行します。手動実行と `workshop-v*` タグに対応します。Windows ランナーが公式モデルと固定版の依存ファイルを取得し、検証済みの `runtime.zip` とコミット・SHA-256 を記録した `runtime.json` を成果物に保存します。
+2. Steam にログインした Windows PC で、成果物と同じコミットをチェックアウトします。開発用ビルドと同じリビジョンの `upstream`、ゲーム v0.113.1、.NET 9 SDK、PowerShell 7、検証用の Python 3.12 を用意します。Actions の成果物を展開し、次を実行します。
+
+   ```powershell
+   .\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64" -RuntimeArtifactDir 'C:\release\artifact'
+   .\Publish-Workshop.ps1 -Mode Check
+   ```
+
+   ローカルでランタイムも含めてビルドした場合は、開発用ビルドの後に同じ `Check` を実行できます。投稿前に、対象コミットの配布物で REQUIREMENTS.md の実機受け入れ条件を確認してください。
+
+3. 初回だけ、Mega Crit 公式アップローダーの実行ファイルを指定して投稿します。成功時に表示された Steam ページを確認し、生成された `workshop/mod_id.txt` をコミットして、今後の更新先を共有します。
+
+   ```powershell
+   .\Publish-Workshop.ps1 -Mode Create -Uploader 'C:\ModUploader\ModUploader.exe'
+   ```
+
+4. 更新時は `workshop/workshop.json` の `changeNote` と Mod のバージョンを更新して再ビルドし、同じアイテムに投稿します。
+
+   ```powershell
+   .\Publish-Workshop.ps1 -Mode Update -Uploader 'C:\ModUploader\ModUploader.exe'
+   ```
+
+初回投稿が途中で止まった場合は、Steam の「自分のワークショップファイル」とアップローダーの `mod-uploader.log` を確認してください。作成済みなら `-Mode Update -ItemId <公開ID>` で続行できます。作成されていないことを確認できた場合に限り、`workshop/.create-pending` を削除して初回投稿を再実行します。Steam への送信は `Create` または `Update` を実行したときに行われます。
+
+[公式 ModUploader](https://github.com/megacrit/sts2-mod-uploader/releases)
+
 ## ライセンス
 
 自作部分の許諾は LICENSE、AlphaDefect 由来の許諾と適用範囲は配布物の AlphaDefect-LICENSE.txt と AlphaDefect-NOTICE.md に記載しています。ゲーム本体、抽出画像、ゲーム由来の語彙表やカタログは配布物に含めません。Slay the Spire 2 は Mega Crit のゲームです。本 Mod は有志によるものです。

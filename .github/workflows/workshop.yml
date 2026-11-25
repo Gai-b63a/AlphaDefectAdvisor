@@ -1,0 +1,52 @@
+name: Prepare Steam Workshop release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['workshop-v*']
+    paths: ['.github/workflows/workshop.yml']
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: hmty-CHEN/AlphaDefect-Public
+          ref: 800db3039162647bf0ad13ed379f155cc5806f5f
+          path: upstream
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Download official model
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download weights-v6 --repo hmty-CHEN/AlphaDefect-Public --pattern ironclad_ema_v24782.pt
+      - name: Build private CPU runtime
+        run: python -I tools/build_runtime.py artifact/runtime.zip
+      - name: Verify payload and record source revision
+        run: |
+          python -I tools/check_workshop.py --runtime artifact/runtime.zip
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          @{ commit = $env:GITHUB_SHA; sha256 = (Get-FileHash artifact/runtime.zip).Hash } |
+            ConvertTo-Json | Set-Content -Encoding utf8 artifact/runtime.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workshop-runtime-${{ github.sha }}
+          path: artifact/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

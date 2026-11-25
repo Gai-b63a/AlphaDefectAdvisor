@@ -3,7 +3,8 @@ param(
     [string]$BuildPython = 'python',
     [string]$Wheelhouse,
     [string]$CrtDir,
-    [string]$RuntimeArchive
+    [string]$RuntimeArchive,
+    [string]$RuntimeArtifactDir
 )
 $ErrorActionPreference = 'Stop'
 $upstream = Join-Path $PSScriptRoot 'upstream'
@@ -19,6 +20,14 @@ $adapted = $original.Replace('public sealed class RunSession : IDisposable', 'pu
 if (!$adapted.Contains('public sealed partial class RunSession : IDisposable')) { throw 'Unsupported upstream RunSession.' }
 New-Item -Type Directory -Force "$project/obj" | Out-Null
 [IO.File]::WriteAllText("$project/obj/LiveRunSession.cs",$adapted)
+if ($RuntimeArtifactDir) {
+    if ($RuntimeArchive) { throw 'Choose either RuntimeArtifactDir or RuntimeArchive.' }
+    $stamp = Get-Content -LiteralPath (Join-Path $RuntimeArtifactDir 'runtime.json') -Raw | ConvertFrom-Json
+    $head = git -C $PSScriptRoot rev-parse HEAD
+    if ($LASTEXITCODE -or $stamp.commit -cne $head) { throw 'Check out the revision used to build this artifact.' }
+    $RuntimeArchive = Join-Path $RuntimeArtifactDir 'runtime.zip'
+    if ((Get-FileHash -LiteralPath $RuntimeArchive).Hash -ne $stamp.sha256) { throw 'Runtime artifact checksum mismatch.' }
+}
 if (!$RuntimeArchive) {
     $RuntimeArchive = Join-Path $PSScriptRoot 'runtime/package/runtime.zip'
     $arguments = @('-I', "$PSScriptRoot/tools/build_runtime.py", $RuntimeArchive)

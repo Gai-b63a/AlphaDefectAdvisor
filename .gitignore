@@ -19,3 +19,5 @@
 *.pt
 *.webp
 *.jsonl.gz
+/workshop/.create-pending
+/workshop/mod_id.txt.new
