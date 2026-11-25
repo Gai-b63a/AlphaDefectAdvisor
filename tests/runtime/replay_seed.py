@@ -1,4 +1,4 @@
-"""Replay numeric observations from the v0.113.1 A10 seed against the installed worker."""
+"""Replay the A10 opening and retail v0.114 card-selection observations against the installed worker."""
 import base64
 import gzip
 import json
@@ -10,6 +10,7 @@ import sys
 
 def main():
     fixtures = json.loads(Path(__file__).with_name("seed-24VQ8UQR7J.json").read_text())
+    fixtures.extend(json.loads(Path(__file__).with_name("card-selection-v114.json").read_text()))
     requests = []
     for scene in fixtures:
         frame = gzip.decompress(base64.b64decode(scene["frame"]))

@@ -35,9 +35,9 @@ public sealed partial class RunSession
         _selecting = null;
         _selected.Clear();
         WaitReason = "選択待ち";
-        if (NMapScreen.Instance is { IsOpen: true } map)
+        var currentScreen = ActiveScreenContext.Instance.GetCurrentScreen();
+        if (currentScreen is NMapScreen { IsOpen: true } map)
         {
-            if (!ActiveScreenContext.Instance.IsCurrent(map)) return null;
             if (map.IsTraveling) { WaitReason = "次の部屋へ移動中"; return null; }
             if (!map.IsTravelEnabled) {
                 WaitReason = "マップを閲覧中。左下の矢印で戻り、部屋の選択を終えてください";
@@ -52,25 +52,23 @@ public sealed partial class RunSession
             if (d.Choices.Count == 0) WaitReason = "選択できる移動先を待っています";
             return d;
         }
-        var overlay = NOverlayStack.Instance?.Peek();
-        if (overlay is NChooseACardSelectionScreen discovery)
-            return ActiveScreenContext.Instance.IsCurrent(discovery) ? DiscoveryChoice(discovery) : null;
-        if (overlay is NDeckUpgradeSelectScreen smith)
-            return ActiveScreenContext.Instance.IsCurrent(smith) ? SmithChoice(smith) : null;
-        if (overlay is NCardRewardSelectionScreen cards)
+        if (currentScreen is NChooseACardSelectionScreen discovery) return DiscoveryChoice(discovery);
+        if (currentScreen is NCardGridSelectionScreen grid) return GridChoice(grid);
+        if (currentScreen is NChooseABundleSelectionScreen bundles) return BundleChoice(bundles);
+        if (currentScreen is NCardRewardSelectionScreen cards)
         {
             var fields = BindingFlags.Instance | BindingFlags.NonPublic;
             var choices = typeof(NCardRewardSelectionScreen).GetField("_options", fields)?.GetValue(cards) as IReadOnlyList<CardCreationResult>;
             var alternatives = typeof(NCardRewardSelectionScreen).GetField("_extraOptions", fields)?.GetValue(cards) as IReadOnlyList<CardRewardAlternative>;
-            if (choices == null || alternatives == null) return null;
+            if (choices == null) return null;
             var d = new Decision(DecisionKind.CardReward);
             foreach (var item in choices)
                 d.Add(ActionKind.PickCardReward, item.Card.Title, () => {}, a:item.Card);
-            foreach (var alt in alternatives)
+            foreach (var alt in alternatives ?? [])
                 d.Add(ActionKind.CardRewardAlt, alt.Title.GetFormattedText(), () => {}, key:Vocab.Alt(alt.OptionId));
             return d;
         }
-        if (overlay is NRewardsScreen rewards)
+        if (currentScreen is NRewardsScreen rewards)
         {
             var d = new Decision(DecisionKind.Rewards);
             foreach (var b in Visible<NRewardButton>(rewards).Where(b=>b.IsEnabled))
@@ -79,11 +77,13 @@ public sealed partial class RunSession
                 d.Add(ActionKind.Leave,"先に進む",()=>{});
             return d;
         }
-        if (overlay != null) return null;
+        if (NOverlayStack.Instance?.Peek() != null) return null;
         if (CombatManager.Instance.IsInProgress)
         {
             var hand = NPlayerHand.Instance;
-            if (hand == null || !hand.IsVisibleInTree() || hand.IsInCardSelection || hand.InCardPlay || CombatManager.Instance.PlayerActionsDisabled || RunManagerBusy()) return null;
+            if (hand == null || !hand.IsVisibleInTree()) return null;
+            if (hand.IsInCardSelection) return currentScreen is NCombatRoom ? HandChoice(hand) : null;
+            if (hand.InCardPlay || CombatManager.Instance.PlayerActionsDisabled || RunManagerBusy()) return null;
             return CombatDecision();
         }
         if (NMerchantRoom.Instance?.Inventory is { IsOpen:true } shop && shop.IsVisibleInTree())

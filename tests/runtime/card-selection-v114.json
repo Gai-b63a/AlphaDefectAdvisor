@@ -1,0 +1,89 @@
+[
+  {
+    "scene": "discovery with skip",
+    "frame": "H4sIAAAAAAACCu2YvU7DMBDHndAvVUhlZGBAAsSKWFhKa/cJeAQkeAfWTLDRJwCK2FohWkaWVgxMrRgQVCxISIwVYmEGH7Zp7F6bpE0qKnLSyckvvv859sVps0QIsblvcU8Q3YBT7jvc97hbZNBebdFarpierfexpCfl+b5sk64Wrh/IuC9uOakFzJJM6Z8kRAsMrmW5X2UEU6mB1RHWQJgZa+awjdg0EptG8qaRvIrljLkBm+P+ntEZ1s8vg/VctIWumj9gNeKP+Y3dlK2bFRBW88kgb1gMamsjpdcQsGOEPSCsbLB5V1278x5xzxhsHWGHls4WuJ/Zuh6wJ4S9IKyHsFOEnSPsEmENhF0j7AZh9wh7RFgXYR8I6yDsGWFvBpPGt65lRshdiRCHe4U7pcLBnGK/3w4T54J12u3tbPciX779zPPjQl9S6aj4fkwAY4OoxYS7dTEblQviKQsWE3jsZHCMjpzTn5aNr6nW4jdeaTHX8biyNJp5qDPhA+vmGruXdt1r3UKcB696HVubRlMPNKJ68GMV6v3cTs3okDFNKkujGa4Tla6qsWb/vBUg17C+mG7Q+cb6TlP3T89DU2+99h7fexRFdJl+Lei7GJuHUfc2ybpFqRtFPfxX3dhC+I0QUk7zneVnr9CeNxrgHUWD7Q+h3W9zSG3S8dbB7OsUa9VqIfxamCXdsOs4quci1o11Y12PfTik/WFWdWObJYPvyitE/14JbBVhawZLyXPjW6df4/93dkuzGPcNeE0FUKgaAAA=",
+    "count": 4,
+    "expected": [
+      [
+        "0",
+        0.7709193229675293
+      ],
+      [
+        "2",
+        0.22265195846557617
+      ],
+      [
+        "1",
+        0.006428721360862255
+      ]
+    ]
+  },
+  {
+    "scene": "combat pile",
+    "frame": "H4sIAAAAAAACCu2YMU/CQBTHr1WEEBMcHRxM1LgaFxeEOz4BH8FEv4NrJ93kE6gYN4gRHF0gDk4QB6PExcTEkRgXZ73z7qR3fdBeaVFiX/Jy9Nd7/7u+e72WLiGEbOpb1GeQaoxj6mXqu9Qt5LUXm7eWK6Zvq30s4SlxvCfalKtl5/dF3Ce1nNBizBJM6h/P8pYxdi5L/TLDmRyasQbAmgDTY/UxbC02DcSmgXHTwLiS5bTcIJH/t4zKoH5BGb0EtGhzXZk/xuooGAsauylaNysArB6QsXGjYqy2NubUGmLsCGD3AKtobN5V1+5xD6lnNLYOsANLZQvUT21Vj7FHgD0DrA+wE4CdAewCYE2AXQHsGmB3AHsAWA9g7wDrAuwJYK8aE0a3rmWC0G0JIYd6lTrG3Jk5xUG/MuHHnHU7ne1s7zxfufnI09+FgaTUkfGDGAMjXtQm3N26kI0ai8VjYhZjPHfknaMjcvrdkvCaci1+4qUWcf0OK4vjyUODcPesm2vuftoNv3WLMA9+9RpaG8dTDzimeghiVex/307M8JA5jSuL45muE5eurLHW4LhtMNawvpCuab6hvpPU/dN5aKmt394TeI/CgC5Rz5k+i6E8jLq2cdYtTt046uG/6iYWwTtCRO8snvd3g+eFsmcEWWtstj9Eds2tIbWJw62D3tcp1mu1QvS1ME26UddxXPdFopvoJro++3BE+8O06iY2Tca+K68g9XslY6sAW0Oe75pBjf632Sn9ZtwXJj3ThVwaAAA=",
+    "count": 3,
+    "expected": [
+      [
+        "0",
+        0.6062474250793457
+      ],
+      [
+        "2",
+        0.38367921113967896
+      ],
+      [
+        "1",
+        0.010073292069137096
+      ]
+    ]
+  },
+  {
+    "scene": "one card already selected",
+    "frame": "H4sIAAAAAAACCu2YvU7DMBDHnUA/VIHKyMDAAGJFLCyltfsEPAISvANrJtjoEwBFbK0QLSNLKwamVgwIKhYkJMYKsTCDjW0aO9c6SZNCRU46ufnF97dzvjhplhBCNvVN6jNINcYx9W3qu9Qt5LUXm7eWK6Zvq30s4SlxvCfalKtl5/dF3Ce1vNBizBJM6h/P8pYxdi5H/TLLmRyasQbAmgDTY/UxbC02A8RmgHEzwLiS5bXcIJH/t6zKoH5+Gb0EtGhzXZk/xurIH/MbuyFaNysCrO6TsXGjYqy21tNqDTF2BLB7gFU0Nueqa8nmqR9Sz2pzWQPYgaWyBeqntqrH2CPAngHWB9gJwM4AdgGwJsCuAHYNsDuAPQCsB7B3gHUB9gSwV40Jo1vXMkHotoyQQ71KHWPuzJzSoN824cfcu53OVq53XqjcfBTo7+JAUurIeOmBjHhRm3B360I2aiwWj0mwmMBzR945OiKn3y0JrynX4ideahHX77CyOJ48NAh3z7q55m7SbpjWLcI8mOo1tDaOpx5wTPXgx6rYfN9OzPCQOY0ri+OZrhOXrqyx1uC4HWCsYX0h3aD5hvpOUvdP56Gltqa9x/cehQFdop4L+iyG8jDq2sZZtzh146iH/6qbWATvCOOM53oPML3LGe83HOAZhYPtD5Fdc2tIbeJw66D3dUr1Wq0YfS1Mk27UdRzXfZHoJrqJrmEfjmh/mFbdxKbJ2HflFaR+r2RsVWNpcax91/Rr9L/NTvk3474Ao33pXlwaAAA=",
+    "count": 3,
+    "expected": [
+      [
+        "1",
+        0.9705983400344849
+      ],
+      [
+        "0",
+        0.02940157987177372
+      ],
+      [
+        "2",
+        8.422764152804518e-10
+      ]
+    ]
+  },
+  {
+    "scene": "selection limit reached",
+    "frame": "H4sIAAAAAAACCu2YvU7DMBDHnUA/VIHKyMDAIyAkttLafYI+AhK8A2s2NvoEQBFbK0RhZGnFwNSKAUHFgoTEWCEWZjhjmzrptXHauGpFTjo5+cX3t3O5OFY2CCEu+A64Q/zGOQWvgO8j17m9uaJ1tJi+6+/jSE/J8wPZprSWXz+Ucd9geanFmSOZ0j9ZFi1n/FoO/CormBqasybCrhEWjA2O4QZiM0hsBhk3g4yrWD6QG25L4B9ZP8P6mTK4BbLuCl2VP84axIyZxm7LVmdFhDUMGR83LsZrayvtryHOjhH2iLBqgK1oda3YKvgReFZja+Bnrr8fZ88Ie0VYH2GnCDtH2CXCrhF2g7BbhD0g7AlhPYR9IqyLsBeEvQeYNFiSNhkh92VCPPAaOKXCuXmlQb8KE+fCu53Obq53UajefRXguDiQVDoqXnkkY8OozYTrupiNG4vHUxYtJvLcyfAcPZnT35ZNrqmexV+80mLa8aSy1E4emkz40HPT5h6m3Qx7bjHmIaxeJ9amduqBWqoHE6vR8Pd2ZkZHzGlaWWpnup4tXVVjrcF5O8JYo/piulHzjfWdpe5c56Hlb8PWHuM1iiK6zH8t6rcYy8O4e5vmudnUtVEP/1U3sRj2CFPuWdS4YXu50PeNRvhGUbMceKVGvV6MP7eLpBt3Xdiqs0Q30U10Q9bLmNaHRdVNbJ4tTcS/vsD/PlODPf9eWQc/B6rvqtwYAAA=",
+    "count": 1,
+    "expected": [
+      [
+        "0",
+        1.0
+      ]
+    ]
+  },
+  {
+    "scene": "two card bundles with skip",
+    "frame": "H4sIAAAAAAACCu2YMU8CMRTHeycI4oCjg4MxJq7GwQmh5RPwEUz0O7jepJt8AhXjBjGCowvEwQniYJS4mJg4EuPirK1tvV55cL3jjki8l7z07nd9/5bX1wK3ghBKUd+mPoe8ZlPH1CvU96hbaNhebd5aSszA9vaxhKfF/b5o00rLnh+IuC9qeaHFmCWY1D9J8ZYx9ixH/SrLmRyasSbAWgDTY/UxbC02A8RmgHEzwLiS5bXcIJH/96yXQf1MGVvXZZvryvwx1kBmzDR2S7QqKwKsYcjYuFExVlub894aYuwYYA8Aq2qMaR+JNVXZBsAOaeCiwpaonyk1LtkTwF4ANgDYKcDOAXYJsBbArgF2A7B7gD0CrA+wD4D1APYMsDeNCaPH1CpB6K6MkEO9Rh1j7sycktuvQvg9Z71udyfXvyhUbz8L9LroSkodGe/GBDAyjDqEu6oL2bixWDwmwWICzx0Nz9EROf1pSXhNuRa/8VKLKNdhZXE8eWgS7kPrpszdT7vpt24R5sGvXkNr43jqAcdUDyZWw/77dmqGR8xpUlkcz3SduHRljbXd+06AsUb1hXSD5hvqO03dP52Htrf1O3uMzygM6BLvs6DfxVAexn22SdYtTt046uG/6iYWwW+EAOe6Z2+brAkOto8jm3d7RA3hcPnS+zqlRr1ejH7NZkk36nqL63djopvoJro+53BE58Os6iY2C7ZAfQ153ycytq4x+R5Xe+9oavS/x245xP7T4sKOh9A3QCYAB+gZAAA=",
+    "count": 3,
+    "expected": [
+      [
+        "0",
+        0.997122585773468
+      ],
+      [
+        "1",
+        0.0028682216070592403
+      ],
+      [
+        "2",
+        9.102923286263831e-06
+      ]
+    ]
+  }
+]
