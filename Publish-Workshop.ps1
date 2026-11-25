@@ -77,8 +77,25 @@ try {
             [IO.File]::WriteAllText($pending, [DateTime]::UtcNow.ToString('o'))
             Push-Location -LiteralPath $dir
             try {
-                & $client +login $account +workshop_build_item $vdf +quit
-                if ($LASTEXITCODE) { throw "SteamCMD failed. Check your Steam items and $vdf before retrying." }
+                $consoleLog = Join-Path $dir 'logs/console_log.txt'
+                $offset = if (Test-Path -LiteralPath $consoleLog) { (Get-Item -LiteralPath $consoleLog).Length } else { 0 }
+                & $client +@ShutdownOnFailedCommand 1 +login $account +workshop_build_item $vdf +quit
+                $steamExit = $LASTEXITCODE
+                # Only an explicit login failure from THIS invocation can clear the creation guard.
+                if (Test-Path -LiteralPath $consoleLog) {
+                    $reader = [IO.StreamReader]::new($consoleLog)
+                    try {
+                        $null = $reader.BaseStream.Seek($offset, [IO.SeekOrigin]::Begin)
+                        $attemptLog = $reader.ReadToEnd()
+                    } finally { $reader.Dispose() }
+                    if ($attemptLog -match '(?m)^\[[^\]\r\n]+\] ERROR \(Invalid Password\)\s*$' -and
+                        $attemptLog -notmatch 'Waiting for user info|Uploading content|Creating (?:a |new )?workshop item' -and
+                        [IO.File]::ReadAllText($vdf) -match '(?i)"publishedfileid"\s+"0"') {
+                        Remove-Item -LiteralPath $pending
+                        throw 'Steam rejected the login (Invalid Password). Retry with the Steam account login name and password.'
+                    }
+                }
+                if ($steamExit) { throw "SteamCMD failed. Check your Steam items and $vdf before retrying." }
             } finally { Pop-Location }
             $idMatch = [regex]::Match([IO.File]::ReadAllText($vdf), '(?i)"publishedfileid"\s+"([1-9][0-9]*)"')
             if (!$idMatch.Success) { throw 'SteamCMD did not return an item ID. Check Steam before retrying.' }
