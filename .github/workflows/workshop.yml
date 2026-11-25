@@ -8,16 +8,54 @@ on:
         type: choice
         required: true
         default: prepare
-        options: [prepare, create, update]
+        options: [prepare, update]
   push:
     tags: ['workshop-v*']
-    paths: ['.github/workflows/workshop.yml']
+    paths: ['.github/workflows/workshop.yml', 'advisor/AlphaDefectAdvisor.json']
     branches: [main]
 
 permissions:
   contents: read
 
 jobs:
+  target:
+    runs-on: ubuntu-latest
+    outputs:
+      update: ${{ steps.select.outputs.update }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: select
+        env:
+          BEFORE: ${{ github.event.before }}
+          OPERATION: ${{ inputs.operation }}
+        shell: python
+        run: |
+          import json, os, re, subprocess
+          from pathlib import Path
+          manifest = "advisor/AlphaDefectAdvisor.json"
+          update = False
+          if os.environ["GITHUB_REF"] == "refs/heads/main":
+              if os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch":
+                  update = os.environ["OPERATION"] == "update"
+              elif os.environ["BEFORE"].strip("0"):
+                  previous = json.loads(subprocess.check_output(["git", "show", os.environ["BEFORE"] + ":" + manifest]))
+                  current = json.loads(Path(manifest).read_bytes())
+                  def version(value):
+                      if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", value):
+                          raise ValueError("Expected major.minor.patch in the mod manifest")
+                      return tuple(map(int, value.split(".")))
+                  update = version(current["version"]) > version(previous["version"])
+          if update:
+              target = Path("workshop/mod_id.txt")
+              value = target.read_text(encoding="utf-8-sig").strip() if target.exists() else ""
+              if not re.fullmatch(r"[1-9][0-9]{0,19}", value) or int(value) >= 2**64:
+                  raise ValueError("Register the manually created item in workshop/mod_id.txt before releasing")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              print("update=" + str(update).lower(), file=out)
+
   upstream:
     runs-on: ubuntu-latest
     steps:
@@ -88,16 +126,14 @@ jobs:
           retention-days: 14
 
   publish:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.operation == 'create' || inputs.operation == 'update')
-    needs: runtime
+    if: needs.target.outputs.update == 'true'
+    needs: [runtime, target]
     runs-on: windows-2022
     timeout-minutes: 50
     environment: steam-workshop
     concurrency:
       group: steam-workshop-publication
       cancel-in-progress: false
-    permissions:
-      contents: write
     defaults:
       run:
         shell: pwsh
@@ -150,7 +186,10 @@ jobs:
           ./Publish-Workshop.ps1 -Mode Check
       - name: Submit to Steam Workshop
         env:
-          ACTION_MODE: ${{ inputs.operation }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          GH_TOKEN: ${{ github.token }}
-        run: python -I tools/steam_release.py "$env:ACTION_MODE" "$env:STEAMCMD"
+        run: |
+          git fetch --no-tags origin main
+          if ($LASTEXITCODE) { throw 'Could not verify the current main release' }
+          git diff --quiet FETCH_HEAD HEAD -- workshop/mod_id.txt advisor/AlphaDefectAdvisor.json
+          if ($LASTEXITCODE) { throw 'Workshop ID or mod manifest changed. Skipping stale upload.' }
+          python -I tools/steam_release.py update "$env:STEAMCMD"

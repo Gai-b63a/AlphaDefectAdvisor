@@ -26,13 +26,13 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 ## Steam ワークショップへの公開（メンテナー向け）
 
-初回のみ、GitHub の **Settings → Environments** で `steam-workshop` を作成し、公開用 Steam アカウントのログイン名を `STEAM_USERNAME`、パスワードを `STEAM_PASSWORD` として Environment secrets に登録します。対象ゲームの Windows 版を所有し、Workshop の利用条件に同意済みのアカウントを使います。Environment のデプロイ対象は `main` に限定してください。Workflow が `workshop/mod_id.txt` を更新できるリポジトリ権限が必要です。
+初回は Steam にログインし、検証済みの `dist/workshop` フォルダーを Windows のエクスプローラーから公式の `ModUploader.exe` にドラッグ＆ドロップして公開します。成功時に生成される `mod_id.txt` を、このリポジトリの `workshop/mod_id.txt` として `main` に登録してください。ファイルの中身は公開アイテムの数値 ID だけです。
 
-**Actions → Steam Workshop → Run workflow** を開き、ブランチを `main` にして、初回は `create`、公開済みアイテムの更新は `update` を選びます。`prepare` はランタイムの作成と検証だけを行います。Steam が新しい端末からのログイン確認を求めたら Steam Mobile で承認してください。この経路はモバイル承認または追加入力のないログインに対応します。メール認証コードの対話入力には対応していません。
+自動更新には GitHub Environment `steam-workshop` の `STEAM_USERNAME` と `STEAM_PASSWORD` を使います。初回投稿した Steam アカウントを設定し、Environment の対象を `main` に限定してください。Steam が新しい端末の認証を求めた場合は Steam Mobile で承認します。
 
-GitHub の一時 Windows ランナーがランタイムを作成し、Steam から対象バージョンのゲームを取得して Mod をビルド・検証します。実機で受け入れ確認したリビジョンを公開してください。成功すると Actions の実行結果に Steam の公開 URL が表示され、初回のアイテム ID は `workshop/mod_id.txt` に保存されます。
+以後、実機確認した変更とともに `advisor/AlphaDefectAdvisor.json` の `version`（major.minor.patch）を上げて `main` に反映すると、その ID のアイテムが自動更新されます。変更内容は `workshop/workshop.json` の `changeNote` に記載します。ID 登録だけでは投稿されません。再試行が必要な場合は **Actions → Steam Workshop → Run workflow → main → update** を使います。
 
-初回投稿の途中で停止し、ID が `pending:...` の場合は、Steam の自分のワークショップ項目と Actions の実行結果を確認してください。作成済みなら GitHub の編集画面で同ファイルを数値 ID に置き換えて `update` を実行します。作成されていないことを確認できた場合だけ同ファイルを削除し、`create` を再実行します。
+[公式 ModUploader](https://github.com/megacrit/sts2-mod-uploader/releases)
 
 ## ライセンス
 

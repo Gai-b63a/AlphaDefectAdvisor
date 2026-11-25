@@ -1,13 +1,10 @@
 """SteamCMD publishing on a disposable GitHub-hosted Windows runner."""
 import argparse
-import base64
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
-import urllib.error
-import urllib.request
 
 APP_ID = "2868840"
 DEPOT = "2868841"
@@ -36,30 +33,6 @@ def steam(exe, args, authenticate=False):
     return log
 
 
-def state_api(method="GET", payload=None):
-    url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/contents/workshop/mod_id.txt"
-    if method == "GET":
-        url += "?ref=main"
-    req = urllib.request.Request(url, method=method, data=json.dumps(payload).encode() if payload else None,
-                                 headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
-                                          "Content-Type": "application/json", "User-Agent": "AlphaDefectAdvisor"})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as res:
-            return json.load(res)
-    except urllib.error.HTTPError as err:
-        if method == "GET" and err.code == 404:
-            return None
-        raise
-
-
-def save_state(value, previous=None):
-    body = {"branch": "main", "message": "Record Steam Workshop publication state",
-            "content": base64.b64encode((value + "\n").encode()).decode()}
-    if previous:
-        body["sha"] = previous
-    return state_api("PUT", body)["content"]["sha"]
-
-
 def valid_id(value):
     return bool(re.fullmatch(r"[1-9][0-9]{0,19}", value)) and int(value) < 2**64
 
@@ -75,31 +48,25 @@ def write_vdf(path, workspace, item):
                     encoding="utf-8")
 
 
-def publish(exe, workspace, mode):
-    state = state_api()
-    item = base64.b64decode(state["content"]).decode().strip() if state else ""
-    if mode == "create" and state:
-        raise ValueError("Workshop ID exists or creation is pending; check workshop/mod_id.txt")
-    if mode == "update" and not valid_id(item):
-        raise ValueError("Update requires a numeric ID in workshop/mod_id.txt on main")
+def publish(exe, workspace):
+    item = Path("workshop/mod_id.txt").read_text(encoding="utf-8-sig").strip()
+    if not valid_id(item):
+        raise ValueError("Register the existing Steam Workshop item ID in workshop/mod_id.txt")
     vdf = exe.parent / "advisor.vdf"
-    write_vdf(vdf, workspace, item or "0")
-    reservation = save_state("pending:" + os.environ["GITHUB_RUN_ID"]) if mode == "create" else None
+    write_vdf(vdf, workspace, item)
     log = steam(exe, ["+workshop_build_item", str(vdf)])
     result = re.search(r'"publishedfileid"\s+"([0-9]+)"', vdf.read_text(encoding="utf-8-sig"), re.I)
-    if not result or not valid_id(result[1]) or (item and item != result[1]) or not re.search(r"(?im)^\s*Success\.", log):
+    if not result or not valid_id(result[1]) or item != result[1] or not re.search(r"(?im)^\s*Success\.", log):
         raise RuntimeError("Steam upload could not be confirmed. Inspect your Workshop items before retrying")
     url = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + result[1]
     print(url, flush=True)
     with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
         summary.write(f"[Steam Workshop item {result[1]}]({url})\n")
-    if reservation:
-        save_state(result[1], reservation)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["download", "create", "update"])
+    parser.add_argument("mode", choices=["download", "update"])
     parser.add_argument("exe", type=Path)
     args = parser.parse_args()
     exe = args.exe.resolve(strict=True)
@@ -113,4 +80,4 @@ if __name__ == "__main__":
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
             output.write(f"game={game}\n")
     else:
-        publish(exe, Path("dist/workshop").resolve(), args.mode)
+        publish(exe, Path("dist/workshop").resolve())
