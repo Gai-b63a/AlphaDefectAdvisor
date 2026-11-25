@@ -1,4 +1,4 @@
-"""SteamCMD publishing on a disposable GitHub-hosted Windows runner."""
+"""Update an existing Workshop item through the local SteamCMD session."""
 import argparse
 import json
 import os
@@ -7,23 +7,15 @@ import re
 import subprocess
 
 APP_ID = "2868840"
-DEPOT = "2868841"
-MANIFEST = "8445808044584180628"
 
 
-def steam(exe, args, authenticate=False):
+def steam(exe, args):
     login = ["+login", os.environ["STEAM_USERNAME"]]
-    if authenticate:
-        password = os.environ.get("STEAM_PASSWORD")
-        if not password:
-            raise ValueError("Configure STEAM_PASSWORD in the steam-workshop environment")
-        login.append(password)
-    env = {k: v for k, v in os.environ.items() if k not in {"GH_TOKEN", "STEAM_PASSWORD"}}
     print("Connecting to Steam. Approve the sign-in in Steam Mobile if prompted.", flush=True)
     # Keep Steam output private: login arguments and account information must stay off the CI log.
     try:
         proc = subprocess.run([str(exe), "+@ShutdownOnFailedCommand", "1", *login, *args, "+quit"],
-                          cwd=exe.parent, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          cwd=exe.parent, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               timeout=1200, check=False)
     except (subprocess.TimeoutExpired, OSError):
         raise RuntimeError("SteamCMD timed out or could not start; check Steam Mobile approval") from None
@@ -56,17 +48,15 @@ def publish(exe, workspace):
     write_vdf(vdf, workspace, item)
     log = steam(exe, ["+workshop_build_item", str(vdf)])
     result = re.search(r'"publishedfileid"\s+"([0-9]+)"', vdf.read_text(encoding="utf-8-sig"), re.I)
-    if not result or not valid_id(result[1]) or item != result[1] or not re.search(r"(?im)^\s*Success\.", log):
+    if not result or not valid_id(result[1]) or item != result[1] or not re.search(r"(?im)^\s*Success[.!]", log):
         raise RuntimeError("Steam upload could not be confirmed. Inspect your Workshop items before retrying")
     url = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + result[1]
     print(url, flush=True)
-    with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-        summary.write(f"[Steam Workshop item {result[1]}]({url})\n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["download", "update", "prepare-create-vdf"])
+    parser.add_argument("mode", choices=["update", "prepare-create-vdf"])
     parser.add_argument("path", type=Path)
     parser.add_argument("--workspace", type=Path, default=Path("dist/workshop"))
     args = parser.parse_args()
@@ -75,13 +65,5 @@ if __name__ == "__main__":
         raise SystemExit(0)
     exe = args.path.resolve(strict=True)
     if not os.environ.get("STEAM_USERNAME"):
-        parser.error("Configure STEAM_USERNAME in the steam-workshop environment")
-    if args.mode == "download":
-        steam(exe, ["+download_depot", APP_ID, DEPOT, MANIFEST], authenticate=True)
-        game = exe.parent / "steamapps/content" / ("app_" + APP_ID) / ("depot_" + DEPOT) / "data_sts2_windows_x86_64"
-        if not (game / "sts2.dll").is_file():
-            raise FileNotFoundError("Steam did not supply the required v0.113.1 Windows depot")
-        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-            output.write(f"game={game}\n")
-    else:
-        publish(exe, Path("dist/workshop").resolve())
+        parser.error("The local updater needs the account name used for the first upload")
+    publish(exe, args.workspace.resolve())

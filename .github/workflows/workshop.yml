@@ -2,13 +2,6 @@ name: Steam Workshop
 
 on:
   workflow_dispatch:
-    inputs:
-      operation:
-        description: Steam Workshop operation
-        type: choice
-        required: true
-        default: prepare
-        options: [prepare, update]
   push:
     tags: ['workshop-v*']
     paths: ['.github/workflows/workshop.yml', 'advisor/AlphaDefectAdvisor.json']
@@ -18,44 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  target:
-    runs-on: ubuntu-latest
-    outputs:
-      update: ${{ steps.select.outputs.update }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - id: select
-        env:
-          BEFORE: ${{ github.event.before }}
-          OPERATION: ${{ inputs.operation }}
-        shell: python
-        run: |
-          import json, os, re, subprocess
-          from pathlib import Path
-          manifest = "advisor/AlphaDefectAdvisor.json"
-          update = False
-          if os.environ["GITHUB_REF"] == "refs/heads/main":
-              if os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch":
-                  update = os.environ["OPERATION"] == "update"
-              elif os.environ["BEFORE"].strip("0"):
-                  previous = json.loads(subprocess.check_output(["git", "show", os.environ["BEFORE"] + ":" + manifest]))
-                  current = json.loads(Path(manifest).read_bytes())
-                  def version(value):
-                      if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", value):
-                          raise ValueError("Expected major.minor.patch in the mod manifest")
-                      return tuple(map(int, value.split(".")))
-                  update = version(current["version"]) > version(previous["version"])
-          if update:
-              target = Path("workshop/mod_id.txt")
-              value = target.read_text(encoding="utf-8-sig").strip() if target.exists() else ""
-              if not re.fullmatch(r"[1-9][0-9]{0,19}", value) or int(value) >= 2**64:
-                  raise ValueError("Register the manually created item in workshop/mod_id.txt before releasing")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              print("update=" + str(update).lower(), file=out)
-
   upstream:
     runs-on: ubuntu-latest
     steps:
@@ -125,18 +80,15 @@ jobs:
           compression-level: 0
           retention-days: 14
 
-  publish:
-    if: needs.target.outputs.update == 'true'
-    needs: [runtime, target]
-    runs-on: windows-2022
-    timeout-minutes: 50
-    environment: steam-workshop
+  release:
+    if: github.ref == 'refs/heads/main'
+    needs: [upstream, runtime]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     concurrency:
-      group: steam-workshop-publication
+      group: workshop-release
       cancel-in-progress: false
-    defaults:
-      run:
-        shell: pwsh
     steps:
       - uses: actions/checkout@v4
         with:
@@ -145,51 +97,22 @@ jobs:
         with:
           name: upstream-source-${{ github.sha }}
           path: upstream
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
       - uses: actions/download-artifact@v4
         with:
           name: workshop-runtime-${{ github.sha }}
           path: artifact
-      - name: Install Valve SteamCMD
-        run: |
-          $dir = Join-Path $env:RUNNER_TEMP steamcmd
-          $zip = Join-Path $env:RUNNER_TEMP steamcmd.zip
-          Invoke-WebRequest https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip -OutFile $zip
-          Expand-Archive $zip $dir
-          $exe = Join-Path $dir steamcmd.exe
-          # The bootstrapper may exit nonzero after spawning its updated client.
-          # Wait for that process tree before checking the installed client again.
-          for ($attempt = 1; $attempt -le 4; $attempt++) {
-            $client = Start-Process -FilePath $exe -ArgumentList '+quit' -WorkingDirectory $dir -WindowStyle Hidden -Wait -PassThru
-            if ($client.ExitCode -eq 0) { break }
-            Write-Host "SteamCMD startup attempt $attempt returned exit code $($client.ExitCode)."
-            if ($attempt -eq 4) { throw "SteamCMD did not initialize after $attempt attempts (exit $($client.ExitCode))." }
-            Start-Sleep -Seconds 3
-          }
-          "STEAMCMD=$exe" >> $env:GITHUB_ENV
-      - name: Sign in and obtain matching game assemblies
-        id: depot
+      - name: Publish versioned build inputs for the local updater
+        shell: bash
         env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-        run: python -I tools/steam_release.py download "$env:STEAMCMD"
-      - name: Build and verify Workshop package
-        env:
-          GAME_DIR: ${{ steps.depot.outputs.game }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          ./Build-Advisor.ps1 -GameAssemblyDir $env:GAME_DIR -RuntimeArtifactDir artifact
-          ./Publish-Workshop.ps1 -Mode Check
-      - name: Submit to Steam Workshop
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-        run: |
-          git fetch --no-tags origin main
-          if ($LASTEXITCODE) { throw 'Could not verify the current main release' }
-          git diff --quiet FETCH_HEAD HEAD -- workshop/mod_id.txt advisor/AlphaDefectAdvisor.json
-          if ($LASTEXITCODE) { throw 'Workshop ID or mod manifest changed. Skipping stale upload.' }
-          python -I tools/steam_release.py update "$env:STEAMCMD"
+          set -euo pipefail
+          version=$(jq -er '.version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' advisor/AlphaDefectAdvisor.json)
+          tag="advisor-v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Version $version already has a release."
+            exit 0
+          fi
+          git archive --format=zip --output=artifact/build-source.zip HEAD
+          zip -qr artifact/build-source.zip upstream/engine/Sts2Headless
+          gh release create "$tag" artifact/build-source.zip artifact/runtime.zip --target "$GITHUB_SHA" --title "AlphaDefect Advisor $version" --notes "Build inputs for the local Workshop updater."
