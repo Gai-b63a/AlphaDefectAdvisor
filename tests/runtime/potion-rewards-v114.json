@@ -1,0 +1,51 @@
+[
+  {
+    "scene": "full potion slots with discard disabled",
+    "frame": "H4sIAAAAAAACCpNhYGBgBWIlIGZkQAUgvgMQBwBxMgN28JAJlc+MRQ0jmtkpONSUQ836DwT8QJoJKsYIFQPJsQCxBFCMncZiqxmoK2aHRcwITQwUDwZsqP4Fchm2shAndgIoxoEkJgDE85HCFCZ2DYvYPSxib7CIzcMithCL2FosYhuxiG3CIrYLi9h5LGJXsYhdxyL2AYvYWSxiN7GIPUETg4AGewYGBUcGhmNOQDYQL3DCkT2A2cfAEcI8AMpKDGfPnLHlur7Ypv/QVxsg2w7JTCRzQOYj05QAuFn7EWIQtxAHcKkdNZf+5oLAAhLMxqZ21FxE3sQw1xFVDi9wxBFv+7G7F5ufCOVxauT/gQK0cju+cKWme0H8BrtRc6llLk3TxKi5o+aOmou/HWG/etUqu5Fr7igAAW5oXwa1P0M+AAAmSA+PQBAAAA==",
+    "count": 1,
+    "expected": [
+      [
+        "0",
+        1.0
+      ]
+    ]
+  },
+  {
+    "scene": "potion reward after freeing a slot",
+    "frame": "H4sIAAAAAAACCpNhYGBgBWIlIGZmQAWMQOwAxAFAnMyAHTxkQuUzY1HDCMUwkIJDTTnUrP9AwA+kmaBijFAxkBwLEEsAxdhpLLaagbpidljEjNDEQPFgwIbqXyCXYSsLptgJoBgHkhgnEHuxo4oJAPF8pDCFiV3DInYPi9gbLGLzsIgtxCK2FovYRixim7CI7cIidh6L2FUsYtexiH3AInYWi9hNLGJP0MQgoMGegUHBkYHhmBOQDcQLnHBkD2D2MXCEMA+AshLD2TNnbLmuL7bpP/TVBsi2QzITyRyQ+cg0JQBu1n6EGMQtxAFcakfNpb+5ILCABLOxqR01F5E3Mcx1RJXDCxxxxNt+7O7F5idCeZwa+Z/Y8oHq5u6njbkKjvQJBxC/wW7UXGqZS9O0NmruqLmj5uJvR9ivXrXKbuSaOwpAgAuI+dH6M1zQvg6yGDeUj9rvGToAAIabv6zYEAAA",
+    "count": 3,
+    "expected": [
+      [
+        "0",
+        0.8018742203712463
+      ],
+      [
+        "1",
+        0.19663426280021667
+      ],
+      [
+        "2",
+        0.001491642207838595
+      ]
+    ]
+  },
+  {
+    "scene": "full potion slots with usable fruit juice",
+    "frame": "H4sIAAAAAAACCpNhYGBgBWIlIGZhQAWMQOwAxAFAnMyAHTxkQuUzY1HDCMUwkIJDTTnUrP9AwA+kmaBijFAxBqgbJYBi7DQWW81AXTE7LGJGaGKgeDBgQ/UvkMtwlgVTbCsWsRNAMQ4kMQEgno8UpjCxa1jE7mERe4NFbB4WsYVYxNZiEduIRWwTFrFdWMTOYxG7ikXsOhaxD1jEzmIRu4lF7AmaGAQ02DMwKDgyMBxzArKBeIETjuwBzD4GjhDmAVBWYjh75owt1/XFNv2HvtoA2XZIZiKZAzIfmaYEwM3ajxCDuIU4gEvtqLn0NxcEFpBgNja1o+Yi8iaGuY6ocniBI45424/dvdj8RCiPUyP/k1JGDHYzCYUrNd0L4jfYjZpLLXNpmiZGzR01d9Rc/O0I+9WrVtmNXHNHAQhwQ/syyP0ZUJ+dD62Pw4JDjB+jLzT8AQCojjqJJBEAAA==",
+    "count": 4,
+    "expected": [
+      [
+        "1",
+        0.7569423913955688
+      ],
+      [
+        "2",
+        0.14112114906311035
+      ],
+      [
+        "3",
+        0.09046640247106552
+      ]
+    ]
+  }
+]

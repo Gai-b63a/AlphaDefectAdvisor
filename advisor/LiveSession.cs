@@ -11,6 +11,7 @@ using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
+using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.CardRewardAlternatives;
@@ -69,14 +70,8 @@ public sealed partial class RunSession
             return d;
         }
         if (currentScreen is NRewardsScreen rewards)
-        {
-            var d = new Decision(DecisionKind.Rewards);
-            foreach (var b in Visible<NRewardButton>(rewards).Where(b=>b.IsEnabled))
-                d.Add(ActionKind.TakeReward,b.Reward.Description.GetFormattedText(),()=>{},a:b.Reward);
-            if (Visible<NProceedButton>(rewards).Any(b=>b.IsEnabled))
-                d.Add(ActionKind.Leave,"先に進む",()=>{});
-            return d;
-        }
+            return LiveRewards(Visible<NRewardButton>(rewards).Select(b => (b.Reward, b.IsEnabled)),
+                Visible<NProceedButton>(rewards).Any(b => b.IsEnabled));
         if (NOverlayStack.Instance?.Peek() != null) return null;
         if (CombatManager.Instance.IsInProgress)
         {
@@ -110,6 +105,30 @@ public sealed partial class RunSession
         }
         return null;
     }
+    static Decision LiveRewards(IEnumerable<(Reward Reward, bool Enabled)> buttons, bool canProceed)
+    {
+        var decision = new Decision(DecisionKind.Rewards);
+        bool full = !Me.HasOpenPotionSlots;
+        bool needsSlot = false;
+        foreach (var (reward, enabled) in buttons) {
+            if (reward.SuccessfullySelected) continue;
+            if (full && reward is PotionReward potion) {
+                // The model can compare the offered bottle with inventory before a slot opens.
+                if (potion.Potion != null) {
+                    decision.Shown.Add((potion, Zone.Offer, 0));
+                    needsSlot = true;
+                }
+            } else if (enabled) {
+                decision.Add(ActionKind.TakeReward, reward.Description.GetFormattedText(), () => {}, a: reward);
+            }
+        }
+        if (canProceed)
+            decision.Add(ActionKind.Leave, needsSlot ? "残りの報酬を見送って先に進む" : "先に進む", () => {});
+        AddPotionActions(decision);
+        if (needsSlot) AddPotionDiscards(decision);
+        return decision;
+    }
+
     static string MapLabel(MapPointType type) => type switch {
         MapPointType.Monster => "通常戦闘", MapPointType.Elite => "エリート",
         MapPointType.RestSite => "休憩所", MapPointType.Shop => "商店",
@@ -124,7 +143,7 @@ public sealed partial class RunSession
             ActionKind.EndTurn => "ターン終了",
             ActionKind.PlayCard when c.A is CardModel card => $"{card.Title} を使用{target}",
             ActionKind.UsePotion when c.A is PotionModel potion => $"{potion.Title.GetFormattedText()} を使用{target}",
-            ActionKind.DiscardPotion when c.A is PotionModel discarded => $"{discarded.Title.GetFormattedText()} を破棄",
+            ActionKind.DiscardPotion when c.A is PotionModel discarded => $"枠{Me.GetPotionSlotIndex(discarded) + 1}の{discarded.Title.GetFormattedText()}を捨てて空きを作る",
             ActionKind.Buy => (c.A switch {
                 CardModel a => a.Title,
                 RelicModel a => a.Title.GetFormattedText(),
