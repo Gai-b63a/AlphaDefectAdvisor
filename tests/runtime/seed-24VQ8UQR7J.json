@@ -1,0 +1,78 @@
+[
+  {
+    "scene": "event",
+    "frame": "H4sIAAAAAAACCu2Xu0oDQRSGz26S9YJ4BbGwsLFfrONmJk+Qd1Cs7SxdfAD1CTRil2ChWNkkWlglWGmwkYiCjYUI1nrGmTWzm7OJwV1BnB/+zOSbyZ+55EB2HgAc9CI6A2FZaIYuoVeA1r0dfp8h5ljKgVZj5myorHfUBLa2YpZiYiyLnkM2lDKrQrLMI9hShOXQrhPe7zh6Nts5l0HYCPoVX4YVO3Uke9DYmmJPGttGNon9fTucJ9gNwe4I9kywPYIdEOyIYMcEOyHYGcGuCHZNsBbBXgjWJNgtwR4jTMovACxwgMsi9tHlYkxpYem5XHbrogyh2Wgsj7YO8zsXb3nse1qmliPy9fYn+sqqdZhcy/cUN9fk/n6uUHmAbGquye3UZlcuD4/1FI+5txq9XmpP/Wo8ifrvp3W+2djC/bbRDO2rNugH6wgM+nhBnkNwvj7Tc+Wctsrx1XzBykQu03JBfa7Eqdzc+S6T3xvN1dcLLLzWwHUtlxH37PJ0zpmxlC4w4dzob+7zfjyTm1RumnVtck2uye3zf6pQrVS8/5tr1Etj6KnI855g0wSb6Xou/Dv6AH3dLCA0EgAA",
+    "count": 3,
+    "expected": [
+      [
+        "2",
+        0.9486342072486877
+      ],
+      [
+        "0",
+        0.05136564001441002
+      ],
+      [
+        "1",
+        2.1555341334078548e-07
+      ]
+    ]
+  },
+  {
+    "scene": "map",
+    "frame": "H4sIAAAAAAACCu2asW7UQBCGN0cCCCQ4CZK7ExSmpbKoKMLdOC/A8QYnwQNcR4nFAxCeAIzoElFASROHguoiCgQRDTISJQUNNezGdry2Zy9rz06kCI80Ouv37nez49312Hc3hRCXpT+Ufk6UbUU6SJ9m53U9tx+9cp8qI2+v93lkaPM4Y/2VdlV+9jJtJdPUuVXpQ6ldYNZ2hVttjGh3RLtY1qT758t5UdozRPuMaNsV7aL0G6tF7nNtw1IbIpotD2s3suy7TmiHfe+AkIN1y3EMCOMdOo7Z9noMLcc7cJzn0SmMd4Mwd0eEHNh+r23fAWF9jAhrhtIOi/kaol2vaFeQcdhqfekve3XtK6J9R7RfiPYC0V4h2htEe4to7xDtPaJ9QrQviHaIaL8R7QDRviHaz4qWWjgRwguE+Lglj6VHWwI3WVJMg/QwVuWFOFgs7l06fL25/eHPpjwea0yNo/j6J8WOWXuFlsZiZ6a2Hff0ucqiBmysbcct1maNG5TPLbXAcN328HixMZ20xrF2Z2WedWZ3jVubYa3Yzi0jlokbLuNCe27EFG/MFG/CFC+2H7mItx/wxOsxcX0mLjBxp0zcGRN3buICcX+Y1OteF/Gq/aHazwU3WcIF4nrDuAAO9gdwz+0zcT0mrs/EBQPXxbqozqcqtxUb6vd6F1xg4oYGbkTkqv3XFG8E5XXdhD0LTs5DG+6ciXu0TyLcmJjfxMDFrlsjdsDD7TNxvcA+v024YOCGRO7Mgttmnum51PezBGjPTQD4NYqJ3NDApcYbG7hKS4A2fyOGeeYxcf2AJw/q/hYb4k2ANs9ihvkQMnEjpjzETPEmltw29wubPLRZbxzxekxcn4kLTNwpE3fGxJ0buNT7cb731H4bAnzvsN53DPUkFmuzPDxZPM3WFkBRv4NWD5a4+vlJul6P6wSo1795XRlC8YyE1eugcUXWL3/nUuau7T+Hoq7UuXq8Asqx5h5r3GXPkkdxjQXZOi7xfUjH7bgdl8wOJ7s7O+P/l9tZZ53lpv7LfEv6/Yp2W6T/rda1u9IfnNFx/gOqF1SqTC4AAA==",
+    "count": 3,
+    "expected": [
+      [
+        "0",
+        0.9084112048149109
+      ],
+      [
+        "2",
+        0.09156786650419235
+      ],
+      [
+        "1",
+        2.095093805110082e-05
+      ]
+    ]
+  },
+  {
+    "scene": "combat",
+    "frame": "H4sIAAAAAAACCu2Yv04CMRzHC4oQFvyDiYODj2B0RWh5Ah7BRB/BxPWeQJ5AxbhBjODoAnFwgjgYJS4mJo7EuDhr67VyV75wd3AlEu6X/NLr5/r7tve70ivdJITEuO9yTxG3xblT7iXuB7Kd4sreZMV5rxd368SkJ2T9UJYJRynuH8u4b24ZqSVYTDKlf7pol4KJe2nu1ymbqa4FqwPWAEyP1fuIa7FJEJsE/SZBv4pltNwIW+D+kXIz1M4v449ANuK2rsqfYDXij/mN3ZGlk+UBq/lkot+wmJhb20vuOSTYCWCPgJU1tsz93DFPFXsG7BWwHmBngF0AdgVYA7AbwG4BewDsCbAuYJ+AdQB7AexdY9L4UrPFCLkvEmJxr3Cn1HZhVqHfrsTsus067fZeunuZK9995fh1vi+pdFR8PyaAsUHUYrY7dZGN6kvEUxYsJvDYyeAYLZnT35KNr6nexV+80mKO63FlqZk81JntA+/NMXYv7brXewsxD17zdWxtamY+UEPzwY9VqPfvdmpGh4xpUllqZriWKV01x5r9eitAX8PaIt2g+UZtp6n7r/PQdJdea4/vNYoCXea+F/RbjPIw6tkmeW8mdU3Mh3nVjSyEPUIATatQq1bz860bdp5N7Zci3Ug30vX4HoW0PsyqbmT/ycRx2Qpxn7srltTYKnGfqwm2BlgW6GWB3roWq85CtbM7sC+D/3H4/n2/GH7csD23+L98ZCBuVp9veH8/kvoHnggaAAA=",
+    "count": 8,
+    "expected": [
+      [
+        "1",
+        0.4697381854057312
+      ],
+      [
+        "5",
+        0.4697381854057312
+      ],
+      [
+        "0",
+        0.02994716353714466
+      ]
+    ]
+  },
+  {
+    "scene": "after_defend",
+    "frame": "H4sIAAAAAAACCu2YvU7DMBDHnfCRqkuBMjAw8AgI1tLafYK+AzwCEmuegD4BUMTWCNEysrRiYGrFgKBiQUJirBALM9jYbmz3mo82QVTkpJOTX3z/c85OlHgTIWRR36XuIN1s6ph6jfq+6MdsQenzavPWUmKGtq5jCV8W5weiXVJadv1IxH1RKwgtxizBpP7JIm8ZY9fy1K9ynMnUjLUA1gaYGWvmsI1YB4h1gLwOkFeyglEbWdf3nM6gflEZvQW0YXNdWT/GPDTOovbbEa3KygDzIjKWN0nmifUkGTveXtbXEGPHAHsAWN1gK9TPlHUq2RPAXgA2BNgpwM4BdgmwNsCuAXYDsHuAPQJsALAPgPUB9gywN4MJo6+aLYLQXRUhl3qjyhnG/LJb8fvVCD/nrN/r7eUHF6X67WeJHpd9SanTwH7/kU5Ek/lV6xLuclyTNINysXhM4sXEHbsaJ2NdUdOflkyvKediFC+1iHI8rSxOpw4twn1s3pSxh2m3wuYtwTqErdeptXE66wGntB7UezVbaQ0c/tz+mmF4TDPLpnRPblq6cq46/nk3Rq5JfSHduPWG+s7deDt6G/aOiPwuwYAu0a8FGolWh6B7m2Xe0tRNYz1kusnOW2YJfCPE0HQrXrNZ/t+6Sdc5jXnLdDPdTDfKP0Yy74d51c3sLxnbLltF/v60yhyDrSF9X42xIhBbBGLXjVi572ns0wHfdtB/EvtXPawmHxf0/edW53+cQf/+er5v1e91cLwZAAA=",
+    "count": 7,
+    "expected": [
+      [
+        "4",
+        0.47948288917541504
+      ],
+      [
+        "1",
+        0.4701846241950989
+      ],
+      [
+        "3",
+        0.0252344012260437
+      ]
+    ]
+  }
+]

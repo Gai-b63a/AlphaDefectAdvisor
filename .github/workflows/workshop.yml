@@ -128,16 +128,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: hmty-CHEN/AlphaDefect-Public
-          ref: 800db3039162647bf0ad13ed379f155cc5806f5f
-          path: fixtures
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /engine/catalog/
-            /python/sts2rl/enchant_effects.json
-          persist-credentials: false
+      - name: Fetch the five versioned tables for the simulated first download
+        shell: pwsh
+        run: |
+          $base = 'https://raw.githubusercontent.com/hmty-CHEN/AlphaDefect-Public/800db3039162647bf0ad13ed379f155cc5806f5f'
+          foreach ($name in 'engine/catalog/vocab.txt','engine/catalog/aliases.txt','engine/catalog/no_downside_relics.txt','engine/catalog/v0.113.1/catalog.json','python/sts2rl/enchant_effects.json') {
+            $file = Join-Path fixtures $name
+            New-Item -ItemType Directory -Force (Split-Path $file) | Out-Null
+            Invoke-WebRequest "$base/$name" -OutFile $file
+          }
       - uses: actions/download-artifact@v4
         with:
           name: workshop-runtime-${{ github.sha }}
@@ -151,7 +150,7 @@ jobs:
           $env:PROBE_PAYLOAD_HASH = (Get-FileHash package/runtime.zip).Hash
           dotnet build tests/runtime/RuntimeCheck.csproj -c Release -p:VmProbe=true
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          dotnet tests/runtime/bin/Release/net9.0/RuntimeCheck.dll package fixtures "$env:RUNNER_TEMP/Advisor VM"
+          python3 -I tests/runtime/replay_seed.py dotnet tests/runtime/bin/Release/net9.0/RuntimeCheck.dll package fixtures "$env:RUNNER_TEMP/Advisor VM"
 
   release:
     if: github.ref == 'refs/heads/main'
