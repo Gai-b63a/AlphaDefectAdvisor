@@ -12,11 +12,9 @@ Steam ワークショップで購読し、ダウンロードが終わったら S
 
 ## 開発用ビルド
 
-開発者は .NET 9 SDK、対応ゲーム版、Windows x64 の標準 CPython 3.12 と pip、Visual Studio の x64 再頒布用 CRT、公式 weights-v6 の `ironclad_ema_v24782.pt` を用意し、重みをリポジトリ直下に置きます。ビルド時に CPU 用 wheel をハッシュ付きの一覧から取得します。
+開発者は .NET 9 SDK、対応ゲーム版、Windows x64 の標準 CPython 3.12 と pip、Visual Studio の x64 再頒布用 CRT、公式 weights-v6 の `ironclad_ema_v24782.pt` を用意し、重みをリポジトリ直下に置きます。ビルド時に CPU 用 wheel をハッシュ付きの一覧から取得します。Windows では「Steam Workshop」の `upstream-source-<コミットSHA>` を `upstream` に展開してから実行してください。
 
 ```powershell
-git clone https://github.com/hmty-CHEN/AlphaDefect-Public.git upstream
-git -C upstream checkout --detach 800db3039162647bf0ad13ed379f155cc5806f5f
 $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 .\tools\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64"
 .\tools\Install-Advisor.ps1 -GameDir $game
@@ -28,7 +26,7 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 **配布候補を試す場合**　GitHub Actions の「Steam Workshop」で同じコミットの Windows と macOS の `vm-runtime-test` の結果を確認します。両ジョブでは初回準備の失敗と復帰、オフラインでの再起動、既知シード4盤面の推奨・上位候補・確率を検証します。Steam のゲーム画面は別途確認します。
 
-1. 開発用 Windows PC でそのコミットをチェックアウトし、上記の固定リビジョンの `upstream` と対応ゲームを用意します。同じ Actions 実行の `workshop-runtime-<コミットSHA>` をダウンロードして展開してください。
+1. 開発用 Windows PC でこのリポジトリの対象コミットをチェックアウトし、対応ゲームを用意します。同じ Actions 実行の `upstream-source-<コミットSHA>` をリポジトリ直下の `upstream` に展開し（`upstream/engine/Sts2Headless` があること）、`workshop-runtime-<コミットSHA>` を別フォルダーに展開してください。
 2. 開発用 PC で次のコマンドを実行します。`-RuntimeArtifactDir` に `runtime.json` と `runtime.zip` のあるフォルダーを渡すと、コミットとハッシュの一致を確認して DLL を作ります。両 OS の VM で同じ `dist/AlphaDefectAdvisor` を使います。
 
 ```powershell
@@ -36,7 +34,7 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 .\tools\Test-WorkshopPackage.ps1 -Workspace .\dist\workshop
 ```
 
-3. Windows 11 x64 と Apple Silicon の macOS ゲストに Steam とゲーム v0.113.1 を入れます。共有フォルダーを切り離してゲーム単体の描画・音声・入力を確認し、Mod 未導入・未購読の状態を復元できるよう保存します。未公開候補の動作確認はその複製に配布フォルダーをゲームの `mods` 配下へコピーして行います。
+3. Windows 11 x64 と Apple Silicon の macOS ゲストに Steam とゲーム v0.113.1 を入れます。共有フォルダーを切り離してゲーム単体の描画・入力を確認し、Mod 未導入・未購読の状態を復元できるよう保存します。未公開候補の動作確認はその複製に配布フォルダーをゲームの `mods` 配下へコピーして行います。
 4. **購読試験**は未購読の状態に戻してから実施します。試験対象の版が Workshop に公開された後、ゲスト内の Steam で購読し、ゲームを起動します。初回の助言、全7場面、通信遮断と復帰の合格条件・記録項目は [要件と VM 試験表](REQUIREMENTS.md) に従ってください。候補を手動配置した結果は、購読からの導入試験とは別に記録します。
 
 ## Steam ワークショップへの公開（メンテナー向け）
