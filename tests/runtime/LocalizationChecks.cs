@@ -8,18 +8,38 @@ static class LocalizationChecks
     public static void Run()
     {
         var catalogs = new Dictionary<string, Dictionary<string, string>>();
-        foreach (var code in new[] { "en", "ja" }) {
+        foreach (var code in AdvisorText.GameLocales.Values) {
             using var resource = typeof(AdvisorText).Assembly.GetManifestResourceStream($"AdvisorText.{code}.json")!;
             catalogs[code] = JsonSerializer.Deserialize<Dictionary<string, string>>(resource)!;
         }
         static string Fields(string value) => string.Join(",", Regex.Matches(value, @"\{\d+(?::[^}]*)?\}")
             .Select(m => m.Value).Order());
-        if (!catalogs["en"].Keys.ToHashSet().SetEquals(catalogs["ja"].Keys) ||
-            catalogs["en"].Any(pair => Fields(pair.Value) != Fields(catalogs["ja"][pair.Key])))
-            throw new InvalidDataException("Translation keys or placeholders differ");
-        foreach (var (language, expected) in new[] { ("jpn","ja"), ("ja_JP","ja"), ("eng","en"), ("en-US","en"), ("fra","en") }) {
-            AdvisorText.SetLanguage(language);
-            if (AdvisorText.T("move") != catalogs[expected]["move"]) throw new Exception(language);
+        // Snapshot from the supported-language table in retail v0.114.0, including hidden Arabic.
+        var expectedIds = "ara deu eng esp fra ind ita jpn kor pol ptb rus spa tha tur zhs zht".Split(' ');
+        if (!expectedIds.ToHashSet().SetEquals(AdvisorText.GameLocales.Keys))
+            throw new InvalidDataException("Retail language coverage changed");
+        var english = catalogs["en"];
+        foreach (var (gameId, code) in AdvisorText.GameLocales) {
+            var strings = catalogs[code];
+            if (!english.Keys.ToHashSet().SetEquals(strings.Keys) ||
+                english.Any(pair => string.IsNullOrWhiteSpace(strings[pair.Key]) ||
+                    Fields(pair.Value) != Fields(strings[pair.Key])))
+                throw new InvalidDataException($"Translation keys or placeholders differ in {code}");
+            AdvisorText.SetLanguage(gameId);
+            if (AdvisorText.Language != code || AdvisorText.RightToLeft != (gameId == "ara"))
+                throw new Exception($"Incorrect language or direction for {gameId}");
+            foreach (var key in strings.Keys) AdvisorText.T(key, 1, 2, 3);
+            var labels = new[] { AdvisorText.T("discard", 1, "Potion"), AdvisorText.T("discard", 2, "Potion") };
+            var lines = AdvisorText.FormatRanking(8, labels, [new(1, .75), new(0, .25)]).Split('\n');
+            if (labels[0] == labels[1] || !lines[0].Contains(labels[1]) || lines[1] != strings["probabilities"] ||
+                lines[2] != AdvisorText.T("rankRow", .75, labels[1]) || lines[3] != AdvisorText.T("rankRow", .25, labels[0]))
+                throw new Exception($"Incorrect ranking for {gameId}");
+        }
+        foreach (var (tag, expected) in new[] { ("ja_JP","ja"), ("en-US","en"), ("fra","fr"), ("sv-SE","en"),
+                ("zh-TW","zh-Hant"), ("zh_Hans","zh-Hans"), ("zh-Hant-HK","zh-Hant"), ("es_LATAM","es-419"),
+                ("es-ES","es-ES"), ("es-MX","es-419"), ("pt_BR","pt-BR") }) {
+            AdvisorText.SetLanguage(tag);
+            if (AdvisorText.Language != expected) throw new Exception($"Incorrect locale for {tag}");
         }
         // The same completed worker response must render in the current language,
         // even when two display names match and the language changes while it is in flight.

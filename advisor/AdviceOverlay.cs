@@ -13,7 +13,26 @@ internal sealed class AdviceOverlay
     };
     readonly Label handle = new() { MouseFilter = Control.MouseFilterEnum.Stop,
         MouseDefaultCursorShape = Control.CursorShape.Move };
-    internal void RefreshHeader() => handle.Text = "⠿  " + AdvisorText.T("move");
+    readonly SystemFont font = new();
+    string? displayedLanguage;
+    internal void RefreshHeader()
+    {
+        if (displayedLanguage == AdvisorText.Language) return;
+        displayedLanguage = AdvisorText.Language;
+        font.FontNames = displayedLanguage switch {
+            "ja" => ["Yu Gothic UI", "Hiragino Sans", "Meiryo"],
+            "zh-Hans" => ["Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC"],
+            "zh-Hant" => ["Microsoft JhengHei UI", "PingFang TC", "Noto Sans CJK TC"],
+            "ko" => ["Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR"],
+            "ar" => ["Segoe UI", "Geeza Pro", "Noto Sans Arabic"],
+            "th" => ["Leelawadee UI", "Thonburi", "Noto Sans Thai"],
+            _ => ["Segoe UI", "Helvetica Neue", "Arial"]
+        };
+        panel.LayoutDirection = AdvisorText.RightToLeft ? Control.LayoutDirectionEnum.Rtl : Control.LayoutDirectionEnum.Ltr;
+        label.TextDirection = handle.TextDirection = AdvisorText.RightToLeft ? Control.TextDirection.Rtl : Control.TextDirection.Ltr;
+        label.Language = handle.Language = displayedLanguage;
+        handle.Text = "⠿  " + AdvisorText.T("move");
+    }
 
     readonly ConfigFile settings = new();
     Vector2? preferred;
@@ -27,7 +46,6 @@ internal sealed class AdviceOverlay
         panel.AddThemeStyleboxOverride("panel", style);
         var column = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         RefreshHeader();
-        var font = new SystemFont { FontNames = ["Yu Gothic UI", "Hiragino Sans", "Meiryo", "Arial"] };
         handle.AddThemeFontOverride("font", font);
         handle.AddThemeFontSizeOverride("font_size", 15);
         handle.GuiInput += input => {

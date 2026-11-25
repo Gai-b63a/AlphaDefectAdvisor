@@ -7,12 +7,21 @@ internal readonly record struct RankedAction(int Index, double Probability);
 
 internal static class AdvisorText
 {
-    static readonly Dictionary<string, Dictionary<string, string>> catalogs = new() {
-        ["en"] = Load("en"), ["ja"] = Load("ja")
-    };
+    // Game language IDs and culture tags from v0.114.0 LocManager.
+    internal static readonly IReadOnlyDictionary<string, string> GameLocales =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            ["eng"] = "en", ["ara"] = "ar", ["zhs"] = "zh-Hans", ["zht"] = "zh-Hant",
+            ["deu"] = "de", ["esp"] = "es-419", ["fra"] = "fr", ["ind"] = "id",
+            ["ita"] = "it", ["jpn"] = "ja", ["kor"] = "ko", ["pol"] = "pl",
+            ["ptb"] = "pt-BR", ["rus"] = "ru", ["spa"] = "es-ES", ["tha"] = "th", ["tur"] = "tr"
+        };
+    static readonly Dictionary<string, Dictionary<string, string>> catalogs =
+        GameLocales.Values.ToDictionary(code => code, Load, StringComparer.OrdinalIgnoreCase);
     static readonly HashSet<string> reported = new();
-    static string language = "en";
+    static string? previousCode;
+    internal static string Language { get; private set; } = "en";
     static CultureInfo culture = CultureInfo.GetCultureInfo("en-US");
+    internal static bool RightToLeft => culture.TextInfo.IsRightToLeft;
 
     static Dictionary<string, string> Load(string code)
     {
@@ -23,21 +32,32 @@ internal static class AdvisorText
 
     internal static void SetLanguage(string? code)
     {
+        if (code == previousCode) return;
+        previousCode = code;
         var tag = (code ?? "").Replace('_', '-').ToLowerInvariant();
-        var basic = tag.Split('-')[0];
-        var resolved = catalogs.ContainsKey(tag) ? tag : basic switch {
-            "jpn" => "ja", "eng" => "en", _ => catalogs.ContainsKey(basic) ? basic : "en"
-        };
-        if (resolved == language) return;
-        language = resolved;
-        culture = CultureInfo.GetCultureInfo(language == "ja" ? "ja-JP" : "en-US");
+        var parts = tag.Split('-');
+        if (!GameLocales.TryGetValue(tag, out var resolved)) {
+            resolved = parts[0] switch {
+                "zh" when parts.Contains("hant") => "zh-Hant",
+                "zh" when parts.Contains("hans") => "zh-Hans",
+                "zh" when parts.Any(p => p is "tw" or "hk" or "mo") => "zh-Hant",
+                "zh" => "zh-Hans",
+                "es" when parts.Any(p => p is "419" or "latam" or "mx" or "ar" or "bo" or "cl"
+                    or "co" or "cr" or "cu" or "do" or "ec" or "gt" or "hn" or "ni" or "pa"
+                    or "pe" or "pr" or "py" or "sv" or "us" or "uy" or "ve") => "es-419",
+                "es" => "es-ES", "pt" => "pt-BR",
+                _ => GameLocales.GetValueOrDefault(parts[0]) ?? (catalogs.ContainsKey(parts[0]) ? parts[0] : "en")
+            };
+        }
+        Language = resolved;
+        culture = CultureInfo.GetCultureInfo(resolved switch { "en" => "en-US", "ja" => "ja-JP", _ => resolved });
     }
 
     internal static string T(string key, params object?[] args)
     {
-        if (!catalogs[language].TryGetValue(key, out var format)) {
-            if (reported.Add(language + "/" + key))
-                Console.Error.WriteLine($"AlphaDefect Advisor: missing {language}/{key}");
+        if (!catalogs[Language].TryGetValue(key, out var format)) {
+            if (reported.Add(Language + "/" + key))
+                Console.Error.WriteLine($"AlphaDefect Advisor: missing {Language}/{key}");
             if (!catalogs["en"].TryGetValue(key, out format)) return key;
         }
         return args.Length == 0 ? format : string.Format(culture, format, args);
