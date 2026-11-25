@@ -1,5 +1,5 @@
 param(
-    [string]$GameAssemblyDir = (Join-Path $PSScriptRoot 'runtime/game/v0.113.1'),
+    [string]$GameAssemblyDir = (Join-Path (Split-Path -Parent $PSScriptRoot) 'runtime/game/v0.113.1'),
     [string]$BuildPython = 'python',
     [string]$Wheelhouse,
     [string]$CrtDir,
@@ -7,8 +7,9 @@ param(
     [string]$RuntimeArtifactDir
 )
 $ErrorActionPreference = 'Stop'
-$upstream = Join-Path $PSScriptRoot 'upstream'
-$project = Join-Path $PSScriptRoot 'advisor'
+$root = Split-Path -Parent $PSScriptRoot
+$upstream = Join-Path $root 'upstream'
+$project = Join-Path $root 'advisor'
 $source = Join-Path $upstream 'engine/Sts2Headless/Engine/RunSession.cs'
 $gameDll = Join-Path $GameAssemblyDir 'sts2.dll'
 if ((Get-FileHash $gameDll).Hash -ne '62ECBE91093E1FA862DE4329AAC865209DCB297804CAF0F0520D92D8C0B4A9C3') {
@@ -23,14 +24,14 @@ New-Item -Type Directory -Force "$project/obj" | Out-Null
 if ($RuntimeArtifactDir) {
     if ($RuntimeArchive) { throw 'Choose either RuntimeArtifactDir or RuntimeArchive.' }
     $stamp = Get-Content -LiteralPath (Join-Path $RuntimeArtifactDir 'runtime.json') -Raw | ConvertFrom-Json
-    $head = git -C $PSScriptRoot rev-parse HEAD
+    $head = git -C $root rev-parse HEAD
     if ($LASTEXITCODE -or $stamp.commit -cne $head) { throw 'Check out the revision used to build this artifact.' }
     $RuntimeArchive = Join-Path $RuntimeArtifactDir 'runtime.zip'
     if ((Get-FileHash -LiteralPath $RuntimeArchive).Hash -ne $stamp.sha256) { throw 'Runtime artifact checksum mismatch.' }
 }
 if (!$RuntimeArchive) {
-    $RuntimeArchive = Join-Path $PSScriptRoot 'runtime/package/runtime.zip'
-    $arguments = @('-I', "$PSScriptRoot/tools/build_runtime.py", $RuntimeArchive)
+    $RuntimeArchive = Join-Path $root 'runtime/package/runtime.zip'
+    $arguments = @('-I', "$root/tools/build_runtime.py", $RuntimeArchive)
     if ($Wheelhouse) { $arguments += @('--wheelhouse', $Wheelhouse) }
     if ($CrtDir) { $arguments += @('--crt', $CrtDir) }
     & $BuildPython @arguments
@@ -41,15 +42,15 @@ $hash = (Get-FileHash -LiteralPath $RuntimeArchive).Hash
 dotnet build "$project/AlphaDefectAdvisor.csproj" -c Release "-p:GameDir=$((Resolve-Path $GameAssemblyDir).Path)" -p:NuGetAudit=false
 if ($LASTEXITCODE) { throw 'Mod build failed.' }
 
-$out = Join-Path $PSScriptRoot 'dist/AlphaDefectAdvisor'
+$out = Join-Path $root 'dist/AlphaDefectAdvisor'
 $files = [ordered]@{
     'AlphaDefectAdvisor.dll' = "$project/bin/Release/net9.0/AlphaDefectAdvisor.dll"
     'AlphaDefectAdvisor.json' = "$project/AlphaDefectAdvisor.json"
     'runtime.zip' = $RuntimeArchive
-    'README.md' = "$PSScriptRoot/README.md"
-    'LICENSE' = "$PSScriptRoot/LICENSE"
-    'AlphaDefect-LICENSE.txt' = "$PSScriptRoot/third-party/AlphaDefect/LICENSE"
-    'AlphaDefect-NOTICE.md' = "$PSScriptRoot/third-party/AlphaDefect/NOTICE.md"
+    'README.md' = "$root/README.md"
+    'LICENSE' = "$root/LICENSE"
+    'AlphaDefect-LICENSE.txt' = "$root/third-party/AlphaDefect/LICENSE"
+    'AlphaDefect-NOTICE.md' = "$root/third-party/AlphaDefect/NOTICE.md"
 }
 New-Item -Type Directory -Force $out | Out-Null
 foreach ($item in (Get-ChildItem -LiteralPath $out -Force)) {
@@ -62,7 +63,7 @@ foreach ($item in (Get-ChildItem -LiteralPath $out -Force)) {
 foreach ($name in $files.Keys) { Copy-Item -LiteralPath $files[$name] -Destination "$out/$name" -Force }
 Write-Host "Mod files: $out"
 
-$workshop = Join-Path $PSScriptRoot 'dist/workshop'
+$workshop = Join-Path $root 'dist/workshop'
 $content = New-Item -Type Directory -Force (Join-Path $workshop 'content')
 foreach ($item in (Get-ChildItem -LiteralPath $content.FullName -Force)) {
     if (!$item.PSIsContainer -and $item.Name -in @('Setup-Advisor.ps1', 'companion.py')) {
@@ -72,5 +73,5 @@ foreach ($item in (Get-ChildItem -LiteralPath $content.FullName -Force)) {
     if ($item.PSIsContainer -or !$files.Contains($item.Name)) { throw "Unexpected Workshop content: $($item.Name)" }
 }
 foreach ($name in $files.Keys) { Copy-Item -LiteralPath "$out/$name" -Destination $content.FullName -Force }
-foreach ($name in @('workshop.json','image.png')) { Copy-Item -LiteralPath "$PSScriptRoot/workshop/$name" -Destination $workshop -Force }
+foreach ($name in @('workshop.json','image.png')) { Copy-Item -LiteralPath "$root/workshop/$name" -Destination $workshop -Force }
 Write-Host "Workshop workspace: $workshop"

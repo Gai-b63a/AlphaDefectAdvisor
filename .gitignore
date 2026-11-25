@@ -6,7 +6,7 @@
 /tools/build_watch.py
 /tools/extract_pck.py
 /tools/watch.html
-/play-ironclad.ps1
+/tools/play-ironclad.ps1
 /ironclad-replay.html
 /.advisor-python
 /.venv/

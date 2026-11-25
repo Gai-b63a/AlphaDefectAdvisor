@@ -18,11 +18,11 @@ Steam ワークショップで購読し、ダウンロードが終わったら S
 git clone https://github.com/hmty-CHEN/AlphaDefect-Public.git upstream
 git -C upstream checkout --detach 800db3039162647bf0ad13ed379f155cc5806f5f
 $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
-.\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64"
-.\Install-Advisor.ps1 -GameDir $game
+.\tools\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64"
+.\tools\Install-Advisor.ps1 -GameDir $game
 ```
 
-`Build-Advisor.ps1` は `dist/workshop` に投稿用ワークスペースを作ります。ビルド用 Python は `-BuildPython`、取得済みの wheel は `-Wheelhouse`、CRT の場所は `-CrtDir` で指定できます。
+`tools/Build-Advisor.ps1` は `dist/workshop` に投稿用ワークスペースを作ります。ビルド用 Python は `-BuildPython`、取得済みの wheel は `-Wheelhouse`、CRT の場所は `-CrtDir` で指定できます。
 
 ## Steam ワークショップへの公開（メンテナー向け）
 

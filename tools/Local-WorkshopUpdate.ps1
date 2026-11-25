@@ -58,8 +58,11 @@ try {
         if ($manifest.version -cne $version -or ([IO.File]::ReadAllText("$src/workshop/mod_id.txt")).Trim() -cne $item) { throw 'Release version or target item mismatch.' }
         Push-Location -LiteralPath $src
         try {
-            & ./Build-Advisor.ps1 -GameAssemblyDir $cfg.game -RuntimeArchive "$work/runtime.zip" *> "$store/last-build.log"
-            & ./Publish-Workshop.ps1 -Mode Check -Python $cfg.python
+            $build = Join-Path $src 'tools/Build-Advisor.ps1'
+            # Release v0.2.1 shipped its build script in the archive root.
+            if (!(Test-Path -LiteralPath $build)) { $build = Join-Path $src 'Build-Advisor.ps1' }
+            & $build -GameAssemblyDir $cfg.game -RuntimeArchive "$work/runtime.zip" *> "$store/last-build.log"
+            & "$PSScriptRoot/Test-WorkshopPackage.ps1" -Workspace "$src/dist/workshop" -Python $cfg.python
             $env:STEAM_USERNAME = $cfg.account
             # An interrupted submission must be reconciled before retrying.
             Save-Text $hold "Check Steam item $item and SteamCMD login before retrying version $version."
