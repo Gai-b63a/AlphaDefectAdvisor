@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags: ['workshop-v*']
-    paths: ['.github/workflows/workshop.yml', 'advisor/AlphaDefectAdvisor.json']
+    paths: ['.github/workflows/workshop.yml', 'advisor/**', 'tests/**', 'tools/*runtime*.py', 'tools/runtime-requirements.txt', 'tools/check_workshop.py']
     branches: [main]
 
 permissions:
