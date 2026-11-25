@@ -3,7 +3,7 @@
   "name": "AlphaDefect Advisor",
   "author": "AlphaDefect Advisor contributors",
   "description": "Read-only Ironclad advice for v0.114.0",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "has_pck": false,
   "has_dll": true,
   "affects_gameplay": false

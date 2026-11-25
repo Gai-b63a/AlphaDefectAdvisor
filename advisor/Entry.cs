@@ -95,7 +95,7 @@ public static class Entry
                 session = RunSession.Live();
             }
             var d = session.Inspect();
-            if (d == null || d.Choices.Count == 0) { Wait("選択待ち"); return; }
+            if (d == null || d.Choices.Count == 0) { Wait(session.WaitReason); return; }
             var labels = d.Choices.Select(RunSession.Describe).ToArray();
             var frame = Convert.ToBase64String(Observation.Build(session, d, false).Serialize());
             var request = JsonSerializer.Serialize(new { frame, labels, floor = state.TotalFloor, kind = d.Kind.ToString() });

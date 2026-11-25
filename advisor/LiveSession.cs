@@ -16,6 +16,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.CardRewardAlternatives;
 using MegaCrit.Sts2.Core.Map;
 using System.Reflection;
+using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 
 namespace Sts2Headless;
 
@@ -27,8 +28,28 @@ public sealed partial class RunSession
     static IEnumerable<T> Visible<T>(Node root) where T : Control =>
         root.FindChildren("*", "", true, false).OfType<T>().Where(n => n.IsVisibleInTree());
 
+    internal string WaitReason { get; private set; } = "選択待ち";
+
     internal Decision? Inspect()
     {
+        WaitReason = "選択待ち";
+        if (NMapScreen.Instance is { IsOpen: true } map)
+        {
+            if (!ActiveScreenContext.Instance.IsCurrent(map)) return null;
+            if (map.IsTraveling) { WaitReason = "次の部屋へ移動中"; return null; }
+            if (!map.IsTravelEnabled) {
+                WaitReason = "マップを閲覧中。左下の矢印で戻り、部屋の選択を終えてください";
+                return null;
+            }
+            var d = new Decision(DecisionKind.Map);
+            foreach (var button in Visible<NMapPoint>(map).Where(x => x.State == MapPointState.Travelable).OrderBy(x => x.Point.coord.col))
+            {
+                var p = button.Point;
+                d.Add(ActionKind.MapMove, $"{p.coord.row+1}行 {p.coord.col+1}列 · {MapLabel(p.PointType)}", () => {}, a:p);
+            }
+            if (d.Choices.Count == 0) WaitReason = "選択できる移動先を待っています";
+            return d;
+        }
         var overlay = NOverlayStack.Instance?.Peek();
         if (overlay is NCardRewardSelectionScreen cards)
         {
@@ -53,17 +74,6 @@ public sealed partial class RunSession
             return d;
         }
         if (overlay != null) return null;
-        if (NMapScreen.Instance is { IsOpen: true } map)
-        {
-            if (!map.IsTravelEnabled || map.IsTraveling) return null;
-            var d = new Decision(DecisionKind.Map);
-            foreach (var button in Visible<NMapPoint>(map).Where(x => x.State == MapPointState.Travelable).OrderBy(x => x.Point.coord.col))
-            {
-                var p = button.Point;
-                d.Add(ActionKind.MapMove, $"{p.coord.row+1}行 {p.coord.col+1}列 · {MapLabel(p.PointType)}", () => {}, a:p);
-            }
-            return d;
-        }
         if (CombatManager.Instance.IsInProgress)
         {
             var hand = NPlayerHand.Instance;
