@@ -17,7 +17,20 @@ function Save-Text($file, $value) {
 if (!(Test-Path -LiteralPath $client)) { throw 'Run under the Windows user who performed the first SteamCMD upload.' }
 $lock = [IO.File]::Open((Join-Path $store 'manual-update.lock'), 'OpenOrCreate', 'Write', 'None')
 try {
-    if (Test-Path $hold) { throw "Previous submission unconfirmed. Check the Workshop change history and $hold before retrying." }
+    if (Test-Path $hold) {
+        $pending = [IO.File]::ReadAllText($hold).Trim()
+        $version = if ($pending.StartsWith('{')) { ($pending | ConvertFrom-Json).version }
+            elseif ($pending -match 'retrying version (\d+\.\d+\.\d+)\.$') { $Matches[1] }
+        if (!$version -or $version -notmatch '^\d+\.\d+\.\d+$') { throw "Check the pending submission in $hold." }
+        $python = (Get-Content -Raw -LiteralPath $config | ConvertFrom-Json).python
+        & $python -I "$PSScriptRoot/steam_release.py" confirm $client --version $version
+        if ($LASTEXITCODE) { throw "Previous submission unconfirmed. Check the Workshop change history and $hold before retrying." }
+        if (!(Test-Path $state) -or [version]$version -gt [version]([IO.File]::ReadAllText($state).Trim())) { Save-Text $state $version }
+        Save-Text $log "$(Get-Date -Format o) Confirmed previous upload of $version to item $item from SteamCMD's Workshop log."
+        Remove-Item -LiteralPath $hold
+        Write-Host "Confirmed previous upload of $version. No files sent."
+        return
+    }
     if (!(Test-Path $config) -or $Account -or $GameAssemblyDir) {
         if (!$GameAssemblyDir) { $GameAssemblyDir = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64' }
         if ((Get-FileHash (Join-Path $GameAssemblyDir 'sts2.dll')).Hash -ne '62ECBE91093E1FA862DE4329AAC865209DCB297804CAF0F0520D92D8C0B4A9C3') { throw 'Expected game v0.113.1. Specify -GameAssemblyDir for a different Steam library.' }
@@ -65,8 +78,8 @@ try {
             & "$PSScriptRoot/Test-WorkshopPackage.ps1" -Workspace "$src/dist/workshop" -Python $cfg.python
             $env:STEAM_USERNAME = $cfg.account
             # An interrupted submission must be reconciled before retrying.
-            Save-Text $hold "Check Steam item $item and SteamCMD login before retrying version $version."
-            & $cfg.python -I tools/steam_release.py update $client
+            Save-Text $hold (@{version=$version; item=$item; preview=[IO.Path]::GetFullPath("$src/dist/workshop/image.png")} | ConvertTo-Json)
+            & $cfg.python -I "$PSScriptRoot/steam_release.py" update $client
             if ($LASTEXITCODE) { throw 'SteamCMD did not confirm the update; check the Workshop change history.' }
             Save-Text $state $version
             Remove-Item -LiteralPath $hold

@@ -30,7 +30,7 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 Mod のバージョンを上げて main に反映すると GitHub Actions がリリースを作成します。Workshop に公開したいタイミングで、初回投稿に使った Windows ユーザーで `Update-Workshop.cmd` を実行してください。最新リリースを検証し、Mod をビルドして既存アイテム `3845626411` に一度送信します。公開用 PC では .NET 9 SDK、Python 3.11 以上、PowerShell 7、対応ゲーム版を使用します。
 
-以前に定期タスクを登録した場合は、Windows のタスク スケジューラで `AlphaDefect Advisor Workshop Update` を無効にしてください。送信結果は `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log` に記録します。送信結果が不明な場合は Workshop の変更履歴を確認し、公開版と published-version.txt を照合してから update-needs-attention.txt を削除してください。
+以前に定期タスクを登録した場合は、Windows のタスク スケジューラで `AlphaDefect Advisor Workshop Update` を無効にしてください。送信結果は `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log` に記録します。送信結果が不明な場合は、もう一度 `Update-Workshop.cmd` を実行してください。前回のビルドと対象アイテムに対応する SteamCMD の完了ログがあれば、再送せず公開済みバージョンを記録して終了します。確認できない場合は送信を保留するので、Workshop の変更履歴を確認してください。
 
 [公式 ModUploader](https://github.com/megacrit/sts2-mod-uploader/releases)
 

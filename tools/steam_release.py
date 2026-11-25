@@ -40,15 +40,76 @@ def write_vdf(path, workspace, item):
                     encoding="utf-8")
 
 
+def receipt(logfile, item, preview, offset=0):
+    """Match one completed Steam upload to the preview in its unique build directory."""
+    prefix = f"[AppID {APP_ID}] "
+    started = False
+    matched = False
+    finished = False
+    try:
+        with logfile.open("rb") as stream:
+            stream.seek(offset)
+            for raw in stream:
+                _, sep, message = raw.decode("utf-8", "replace").strip().partition(prefix)
+                if not sep:
+                    continue
+                if message.startswith("Upload starting for workshop item "):
+                    started = message == f"Upload starting for workshop item {item} by AppID {APP_ID}"
+                    matched = finished = False
+                elif started and message.startswith("Uploaded new workshop preview file "):
+                    matched = Path(message.removeprefix("Uploaded new workshop preview file ")) == preview
+                elif started and message.startswith("Upload finished for workshop item "):
+                    finished = matched and message == f"Upload finished for workshop item {item} : OK"
+                    started = False
+    except OSError:
+        return False
+    return finished
+
+
+def recover(exe, version):
+    store = exe.parent.parent
+    item = "3845626411"
+    vdf = (exe.parent / "advisor.vdf").read_text(encoding="utf-8-sig")
+    preview_field = re.search(r'^\s*"previewfile"\s+"([^"]+)"\s*$', vdf, re.M | re.I)
+    if not preview_field or not re.search(r'^\s*"publishedfileid"\s+"' + item + r'"\s*$', vdf, re.M | re.I):
+        return False
+    preview = Path(preview_field[1])
+    try:
+        relative = preview.relative_to(store).as_posix()
+    except ValueError:
+        return False
+    if not re.fullmatch(r"build-[0-9a-f-]{36}/source/dist/workshop/image[.]png", relative):
+        return False
+    hold = (store / "update-needs-attention.txt").read_text(encoding="utf-8-sig").strip()
+    if hold.startswith("{"):
+        record = json.loads(hold)
+        if record != {"version": version, "item": item, "preview": str(preview)}:
+            return False
+    else:
+        # v0.2.1 used a text marker. Bind it to the VDF version and submission time.
+        if hold != f"Check Steam item {item} and SteamCMD login before retrying version {version}.":
+            return False
+        if not re.search(r'^\s*"changenote"\s+"v' + re.escape(version) + r'(?![.0-9])', vdf, re.M):
+            return False
+        times = [(store / "update-needs-attention.txt").stat().st_mtime, (exe.parent / "advisor.vdf").stat().st_mtime]
+        if not -2 <= times[1] - times[0] <= 120:
+            return False
+    return receipt(exe.parent / "logs/workshop_log.txt", item, preview)
+
+
 def publish(exe, workspace):
     item = Path("workshop/mod_id.txt").read_text(encoding="utf-8-sig").strip()
     if not valid_id(item):
         raise ValueError("Register the existing Steam Workshop item ID in workshop/mod_id.txt")
     vdf = exe.parent / "advisor.vdf"
     write_vdf(vdf, workspace, item)
+    logfile = exe.parent / "logs/workshop_log.txt"
+    offset = logfile.stat().st_size if logfile.exists() else 0
     log = steam(exe, ["+workshop_build_item", str(vdf)])
     result = re.search(r'"publishedfileid"\s+"([0-9]+)"', vdf.read_text(encoding="utf-8-sig"), re.I)
-    if not result or not valid_id(result[1]) or item != result[1] or not re.search(r"(?im)^\s*Success[.!]", log):
+    if not result or not valid_id(result[1]) or item != result[1] or not (
+        receipt(logfile, item, workspace / "image.png", offset) or re.search(r"(?im)^\s*Success[.!]", log)
+    ):
         raise RuntimeError("Steam upload could not be confirmed. Inspect your Workshop items before retrying")
     url = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + result[1]
     print(url, flush=True)
@@ -56,10 +117,13 @@ def publish(exe, workspace):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["update", "prepare-create-vdf"])
+    parser.add_argument("mode", choices=["confirm", "update", "prepare-create-vdf"])
     parser.add_argument("path", type=Path)
     parser.add_argument("--workspace", type=Path, default=Path("dist/workshop"))
+    parser.add_argument("--version")
     args = parser.parse_args()
+    if args.mode == "confirm":
+        raise SystemExit(0 if args.version and recover(args.path.resolve(), args.version) else 1)
     if args.mode == "prepare-create-vdf":
         write_vdf(args.path.resolve(), args.workspace.resolve(strict=True), "0")
         raise SystemExit(0)
