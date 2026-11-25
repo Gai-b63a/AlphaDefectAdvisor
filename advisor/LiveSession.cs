@@ -32,6 +32,8 @@ public sealed partial class RunSession
 
     internal Decision? Inspect()
     {
+        _selecting = null;
+        _selected.Clear();
         WaitReason = "選択待ち";
         if (NMapScreen.Instance is { IsOpen: true } map)
         {
@@ -51,6 +53,10 @@ public sealed partial class RunSession
             return d;
         }
         var overlay = NOverlayStack.Instance?.Peek();
+        if (overlay is NChooseACardSelectionScreen discovery)
+            return ActiveScreenContext.Instance.IsCurrent(discovery) ? DiscoveryChoice(discovery) : null;
+        if (overlay is NDeckUpgradeSelectScreen smith)
+            return ActiveScreenContext.Instance.IsCurrent(smith) ? SmithChoice(smith) : null;
         if (overlay is NCardRewardSelectionScreen cards)
         {
             var fields = BindingFlags.Instance | BindingFlags.NonPublic;
