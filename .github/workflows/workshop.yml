@@ -18,7 +18,38 @@ permissions:
   contents: read
 
 jobs:
+  upstream:
+    runs-on: ubuntu-latest
+    steps:
+      # Training archives outside these paths contain names Windows cannot check out.
+      - uses: actions/checkout@v4
+        with:
+          repository: hmty-CHEN/AlphaDefect-Public
+          ref: 800db3039162647bf0ad13ed379f155cc5806f5f
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /engine/Sts2Headless/
+            /engine/game_version.txt
+            /python/
+            /tools/ability_test.py
+      - name: Stage upstream build inputs
+        run: |
+          mkdir -p source/engine source/tools
+          cp -R engine/Sts2Headless engine/game_version.txt source/engine/
+          cp -R python source/
+          cp tools/ability_test.py source/tools/
+          test -s source/engine/Sts2Headless/Engine/RunSession.cs
+          test -s source/python/sts2rl/model.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: upstream-source-${{ github.sha }}
+          path: source/
+          if-no-files-found: error
+          retention-days: 14
+
   runtime:
+    needs: upstream
     runs-on: windows-2022
     timeout-minutes: 45
     defaults:
@@ -28,12 +59,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          repository: hmty-CHEN/AlphaDefect-Public
-          ref: 800db3039162647bf0ad13ed379f155cc5806f5f
+          name: upstream-source-${{ github.sha }}
           path: upstream
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -76,12 +105,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          repository: hmty-CHEN/AlphaDefect-Public
-          ref: 800db3039162647bf0ad13ed379f155cc5806f5f
+          name: upstream-source-${{ github.sha }}
           path: upstream
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
