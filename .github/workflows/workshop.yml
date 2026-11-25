@@ -126,8 +126,15 @@ jobs:
           Invoke-WebRequest https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip -OutFile $zip
           Expand-Archive $zip $dir
           $exe = Join-Path $dir steamcmd.exe
-          & $exe +quit
-          if ($LASTEXITCODE) { throw "SteamCMD initialization failed" }
+          # The bootstrapper may exit nonzero after spawning its updated client.
+          # Wait for that process tree before checking the installed client again.
+          for ($attempt = 1; $attempt -le 4; $attempt++) {
+            $client = Start-Process -FilePath $exe -ArgumentList '+quit' -WorkingDirectory $dir -WindowStyle Hidden -Wait -PassThru
+            if ($client.ExitCode -eq 0) { break }
+            Write-Host "SteamCMD startup attempt $attempt returned exit code $($client.ExitCode)."
+            if ($attempt -eq 4) { throw "SteamCMD did not initialize after $attempt attempts (exit $($client.ExitCode))." }
+            Start-Sleep -Seconds 3
+          }
           "STEAMCMD=$exe" >> $env:GITHUB_ENV
       - name: Sign in and obtain matching game assemblies
         id: depot
