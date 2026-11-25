@@ -26,31 +26,13 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 ## Steam ワークショップへの公開（メンテナー向け）
 
-1. GitHub Actions の **Prepare Steam Workshop release** を実行します。手動実行と `workshop-v*` タグに対応します。Windows ランナーが公式モデルと固定版の依存ファイルを取得し、検証済みの `runtime.zip` とコミット・SHA-256 を記録した `runtime.json` を成果物に保存します。
-2. Steam にログインした Windows PC で、成果物と同じコミットをチェックアウトします。開発用ビルドと同じリビジョンの `upstream`、ゲーム v0.113.1、.NET 9 SDK、PowerShell 7、検証用の Python 3.12 を用意します。Actions の成果物を展開し、次を実行します。
+初回のみ、GitHub の **Settings → Environments** で `steam-workshop` を作成し、公開用 Steam アカウントのログイン名を `STEAM_USERNAME`、パスワードを `STEAM_PASSWORD` として Environment secrets に登録します。対象ゲームの Windows 版を所有し、Workshop の利用条件に同意済みのアカウントを使います。Environment のデプロイ対象は `main` に限定してください。Workflow が `workshop/mod_id.txt` を更新できるリポジトリ権限が必要です。
 
-   ```powershell
-   .\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64" -RuntimeArtifactDir 'C:\release\artifact'
-   .\Publish-Workshop.ps1 -Mode Check
-   ```
+**Actions → Steam Workshop → Run workflow** を開き、ブランチを `main` にして、初回は `create`、公開済みアイテムの更新は `update` を選びます。`prepare` はランタイムの作成と検証だけを行います。Steam が新しい端末からのログイン確認を求めたら Steam Mobile で承認してください。この経路はモバイル承認または追加入力のないログインに対応します。メール認証コードの対話入力には対応していません。
 
-   ローカルでランタイムも含めてビルドした場合は、開発用ビルドの後に同じ `Check` を実行できます。投稿前に、対象コミットの配布物で REQUIREMENTS.md の実機受け入れ条件を確認してください。
+GitHub の一時 Windows ランナーがランタイムを作成し、Steam から対象バージョンのゲームを取得して Mod をビルド・検証します。実機で受け入れ確認したリビジョンを公開してください。成功すると Actions の実行結果に Steam の公開 URL が表示され、初回のアイテム ID は `workshop/mod_id.txt` に保存されます。
 
-3. 初回だけ、Mega Crit 公式アップローダーの実行ファイルを指定して投稿します。成功時に表示された Steam ページを確認し、生成された `workshop/mod_id.txt` をコミットして、今後の更新先を共有します。
-
-   ```powershell
-   .\Publish-Workshop.ps1 -Mode Create -Uploader 'C:\ModUploader\ModUploader.exe'
-   ```
-
-4. 更新時は `workshop/workshop.json` の `changeNote` と Mod のバージョンを更新して再ビルドし、同じアイテムに投稿します。
-
-   ```powershell
-   .\Publish-Workshop.ps1 -Mode Update -Uploader 'C:\ModUploader\ModUploader.exe'
-   ```
-
-初回投稿が途中で止まった場合は、Steam の「自分のワークショップファイル」とアップローダーの `mod-uploader.log` を確認してください。作成済みなら `-Mode Update -ItemId <公開ID>` で続行できます。作成されていないことを確認できた場合に限り、`workshop/.create-pending` を削除して初回投稿を再実行します。Steam への送信は `Create` または `Update` を実行したときに行われます。
-
-[公式 ModUploader](https://github.com/megacrit/sts2-mod-uploader/releases)
+初回投稿の途中で停止し、ID が `pending:...` の場合は、Steam の自分のワークショップ項目と Actions の実行結果を確認してください。作成済みなら GitHub の編集画面で同ファイルを数値 ID に置き換えて `update` を実行します。作成されていないことを確認できた場合だけ同ファイルを削除し、`create` を再実行します。
 
 ## ライセンス
 
