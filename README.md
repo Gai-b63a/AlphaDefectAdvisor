@@ -1,18 +1,28 @@
 # AlphaDefect Advisor
 
-Slay the Spire 2 のゲーム画面内に、ソロのアイアンクラッド向けの助言を日本語で表示します。ゲーム内の助言パネルには推薦行動と、最大3候補のモデル選択確率が出ます。カードや対象の選択、ターン終了はプレイヤーが操作します。Mod v0.2.2 の対象は Steam の public-beta v0.114.0 です。パネルは最初は右中央に表示され、見出しを左ドラッグして移動できます。離した位置は次回の起動にも使われます。開発版では Apple Silicon 用の推論環境もビルドしています。
+AlphaDefect Advisor gives **Japanese-language advice for solo Ironclad runs** in Slay the Spire 2. The in-game panel recommends a move and shows the model's selection probabilities for up to three actions. You choose the cards and targets and decide when to end your turn.
 
-## 初回の導入
+The mod targets Steam's **public-beta branch, game version v0.114.0**. The panel starts at the center-right of the screen. Drag its header with the left mouse button to move it. The mod remembers the position for your next session.
 
-Steam ワークショップで購読し、ダウンロードが終わったら Steam からゲームを起動します。初回はゲーム内に準備状況が表示されます。Mod は同梱の専用 Python、CPU 推論ライブラリ、公式 weights-v6 の重みを展開し、固定リビジョンの語彙表など5ファイルを GitHub から取得して SHA-256 で照合します。初回準備中はインターネット接続が必要です。完了後はソロのアイアンクラッドでランを開始してください。
+## Install from Steam
 
-推論環境は利用者ごとの `%LOCALAPPDATA%/AlphaDefectAdvisor/runtime` に作成します。モデルの手動取得、Python・Git の事前インストール、セットアップスクリプトや別アプリの起動は不要です。同じ配布版を再起動すると、照合済みのデータを再利用します。
+1. [Subscribe to AlphaDefect Advisor on the Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3845626411).
+2. Wait for Steam to finish downloading the mod, then launch the game from Steam. Keep an internet connection for the first launch. The panel shows setup progress.
+3. Once setup is complete, start a solo Ironclad run.
 
-通常の戦闘、マップ、イベント、休憩所、商店、報酬、カード報酬が対象です。v0.2.5 では「発見」、手札の選択・強化、戦闘中のカードの山、デッキの削除・変化・付与・鍛冶、カードの束の選択にも助言を表示します。複数枚を選ぶと残りの候補を再評価します。カードのプレビューではゲーム側で確定または戻る操作をしてください。敵ターンや未対応の選択画面では待機します。詳細な実機受け入れ条件は開発リポジトリの REQUIREMENTS.md に記載しています。
+The mod installs its own Python runtime, CPU inference libraries and official weights-v6 model. It downloads five data files, including the vocabulary, from a pinned GitHub revision and verifies their SHA-256 hashes. On Windows, the runtime lives in `%LOCALAPPDATA%/AlphaDefectAdvisor/runtime`. Subsequent launches of the same release reuse the verified files. Subscription and first launch handle setup, including the model download through Steam.
 
-## 開発用ビルド
+## What the advisor covers
 
-開発者は .NET 9 SDK、対応ゲーム版、Windows x64 の標準 CPython 3.12 と pip、Visual Studio の x64 再頒布用 CRT、公式 weights-v6 の `ironclad_ema_v24782.pt` を用意し、重みをリポジトリ直下に置きます。ビルド時に CPU 用 wheel をハッシュ付きの一覧から取得します。Windows では「Steam Workshop」の `upstream-source-<コミットSHA>` を `upstream` に展開してから実行してください。
+- **Combat and cards.** Get advice on plays, targets, card rewards, Discovery, hand selections and upgrades, cards in combat piles, and card bundles. When selecting multiple cards, the advisor reevaluates the remaining choices after each pick.
+- **Map and rooms.** Get recommendations on routes, events, rest sites, shops and rewards, including which card to smith, remove, transform or enchant. Confirm a card preview in the game or go back to change your selection.
+- **Potion rewards.** When your belt is full, the advisor can identify a potion to discard by name and slot, suggest drinking a usable potion, or recommend leaving the remaining rewards. It reevaluates the reward when a slot opens.
+
+The panel waits during enemy turns and on unsupported selection screens. The [acceptance criteria and VM test checklist](REQUIREMENTS.md) are available in Japanese.
+
+## Build on Windows
+
+Install the .NET 9 SDK, the supported game version, standard Windows x64 CPython 3.12 with pip, and the Visual Studio x64 redistributable CRT. Place the official weights-v6 file `ironclad_ema_v24782.pt` in the repository root. From the **Steam Workshop** GitHub Actions run for your commit, extract `upstream-source-<commit SHA>` into `upstream`. The build downloads CPU wheels from a hash-pinned list.
 
 ```powershell
 $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
@@ -20,33 +30,31 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 .\tools\Install-Advisor.ps1 -GameDir $game
 ```
 
-`tools/Build-Advisor.ps1` は `dist/workshop` に投稿用ワークスペースを作ります。ビルド用 Python は `-BuildPython`、取得済みの wheel は `-Wheelhouse`、CRT の場所は `-CrtDir` で指定できます。
+The build creates the Workshop upload workspace in `dist/workshop`. Use `-BuildPython` to select the build interpreter, `-Wheelhouse` for previously downloaded wheels, or `-CrtDir` for the CRT directory.
 
-## Windows・macOS の VM で試す（開発者向け）
+## Test a release candidate on Windows and macOS
 
-**配布候補を試す場合**　GitHub Actions の「Steam Workshop」で同じコミットの Windows と macOS の `vm-runtime-test` の結果を確認します。両ジョブでは初回準備の失敗と復帰、オフラインでの再起動、既知シード4盤面の推奨・上位候補・確率を検証します。Steam のゲーム画面は別途確認します。
+The development build includes an Apple Silicon inference runtime. In the **Steam Workshop** workflow, check both `vm-runtime-test` jobs for the candidate commit. They test recovery from a failed initial setup, offline restart, and the model's ranked actions and probabilities for the seeded opening, card selections and potion rewards. To verify the Steam installation and overlay in the running game:
 
-1. 開発用 Windows PC でこのリポジトリの対象コミットをチェックアウトし、対応ゲームを用意します。同じ Actions 実行の `upstream-source-<コミットSHA>` をリポジトリ直下の `upstream` に展開し（`upstream/engine/Sts2Headless` があること）、`workshop-runtime-<コミットSHA>` を別フォルダーに展開してください。
-2. 開発用 PC で次のコマンドを実行します。`-RuntimeArtifactDir` に `runtime.json` と `runtime.zip` のあるフォルダーを渡すと、コミットとハッシュの一致を確認して DLL を作ります。両 OS の VM で同じ `dist/AlphaDefectAdvisor` を使います。
+1. On the Windows build PC, check out the candidate commit and install the supported game version. Extract `upstream-source-<commit SHA>` from that workflow run into `upstream` so that `upstream/engine/Sts2Headless` exists. Extract `workshop-runtime-<commit SHA>` from the same run into a separate folder.
+2. Pass the folder containing `runtime.json` and `runtime.zip` to the build. It checks the commit and archive hash before building the DLL. Use the same `dist/AlphaDefectAdvisor` folder for both guests.
 
-```powershell
-.\tools\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64" -RuntimeArtifactDir C:\AdvisorTest\artifact
-.\tools\Test-WorkshopPackage.ps1 -Workspace .\dist\workshop
-```
+   ```powershell
+   .\tools\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64" -RuntimeArtifactDir C:\AdvisorTest\artifact
+   .\tools\Test-WorkshopPackage.ps1 -Workspace .\dist\workshop
+   ```
 
-3. Windows 11 x64 と Apple Silicon の macOS ゲストに Steam とゲーム v0.114.0 を入れます。共有フォルダーを切り離してゲーム単体の描画・入力を確認し、Mod 未導入・未購読の状態を復元できるよう保存します。未公開候補の動作確認はその複製に配布フォルダーをゲームの `mods` 配下へコピーして行います。
-4. **購読試験**は未購読の状態に戻してから実施します。試験対象の版が Workshop に公開された後、ゲスト内の Steam で購読し、ゲームを起動します。初回の助言、全7場面、通信遮断と復帰の合格条件・記録項目は [要件と VM 試験表](REQUIREMENTS.md) に従ってください。候補を手動配置した結果は、購読からの導入試験とは別に記録します。
+3. Install Steam and game v0.114.0 in a Windows 11 x64 guest and an Apple Silicon macOS guest. Disconnect shared folders, verify rendering and input in the base game, and save a snapshot before installing or subscribing to the mod. To test an unpublished candidate, clone the snapshot and copy the distribution folder into the game's `mods` directory.
+4. For the subscription test, restore the clean snapshot after the candidate is published. Subscribe in the guest's Steam client and launch the game. Record first-launch advice, the seven gameplay scenarios, and network failure and recovery. Keep manual-install results separate from subscription results. [Acceptance criteria and VM test checklist](REQUIREMENTS.md)
 
-## Steam ワークショップへの公開（メンテナー向け）
+## Publish to the Steam Workshop
 
-初回は Steam にログインし、検証済みの `dist/workshop` フォルダーを Windows のエクスプローラーから公式の `ModUploader.exe` にドラッグ＆ドロップして公開します。成功時に生成される `mod_id.txt` を、このリポジトリの `workshop/mod_id.txt` として `main` に登録してください。ファイルの中身は公開アイテムの数値 ID だけです。
+**Update the existing item.** Bump the mod version and merge it into `main`. GitHub Actions creates a release. When you are ready to publish, run `Update-Workshop.cmd` under the Windows user account used for the first upload. It verifies the latest release, builds the mod, and submits it to Workshop item `3845626411`. The publishing PC needs the .NET 9 SDK, Python 3.11 or later, PowerShell 7 and the supported game version.
 
-Mod のバージョンを上げて main に反映すると GitHub Actions がリリースを作成します。Workshop に公開したいタイミングで、初回投稿に使った Windows ユーザーで `Update-Workshop.cmd` を実行してください。最新リリースを検証し、Mod をビルドして既存アイテム `3845626411` に一度送信します。公開用 PC では .NET 9 SDK、Python 3.11 以上、PowerShell 7、対応ゲーム版を使用します。
+The updater writes its log to `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log`. If the upload result is unclear, run the updater again. It checks SteamCMD's completion record for the previous build and item. A matching record marks the version as published without sending it again. If verification is inconclusive, the updater pauses so you can check the item's Workshop change history. If you previously installed the scheduled task named `AlphaDefect Advisor Workshop Update`, disable it in Windows Task Scheduler.
 
-以前に定期タスクを登録した場合は、Windows のタスク スケジューラで `AlphaDefect Advisor Workshop Update` を無効にしてください。送信結果は `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log` に記録します。送信結果が不明な場合は、もう一度 `Update-Workshop.cmd` を実行してください。前回のビルドと対象アイテムに対応する SteamCMD の完了ログがあれば、再送せず公開済みバージョンを記録して終了します。確認できない場合は送信を保留するので、Workshop の変更履歴を確認してください。
+**Create an item for the first time.** Sign in to Steam and drag the verified `dist/workshop` folder from Windows Explorer onto the official `ModUploader.exe`. After a successful upload, commit the generated `mod_id.txt` to `main` as `workshop/mod_id.txt`. The file contains just the numeric Workshop item ID. [Official ModUploader releases](https://github.com/megacrit/sts2-mod-uploader/releases)
 
-[公式 ModUploader](https://github.com/megacrit/sts2-mod-uploader/releases)
+## License
 
-## ライセンス
-
-自作部分の許諾は LICENSE、AlphaDefect 由来の許諾と適用範囲は配布物の AlphaDefect-LICENSE.txt と AlphaDefect-NOTICE.md に記載しています。ゲーム本体、抽出画像、ゲーム由来の語彙表やカタログは配布物に含めません。Slay the Spire 2 は Mega Crit のゲームです。本 Mod は有志によるものです。
+See [LICENSE](LICENSE) for the original code. The distribution includes `AlphaDefect-LICENSE.txt` and `AlphaDefect-NOTICE.md` for the AlphaDefect-derived components. The distribution excludes the game, extracted game images, and game-derived vocabulary and catalog files. Slay the Spire 2 is a game by Mega Crit. AlphaDefect Advisor is a fan-made mod.

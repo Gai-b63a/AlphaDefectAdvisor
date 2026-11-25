@@ -1,6 +1,6 @@
 {
   "title": "AlphaDefect Advisor",
-  "description": "Windows・v0.114.0 のソロ・アイアンクラッド向け助言 Mod。ゲーム画面内に推薦行動と最大3候補のモデル選択確率を表示します。購読後にゲームを起動すると、専用の推論環境を自動で準備します。初回は語彙表などの取得にインターネット接続が必要です。",
+  "description": "Get Japanese-language advice for solo Ironclad runs in Slay the Spire 2. The in-game panel recommends a move and shows the model's selection probabilities for up to three actions. You control every play. Drag the panel by its header to move it.\n\nThe advisor covers combat, map routes, events, rest sites, shops and rewards. It can recommend cards to pick or upgrade. When your potion belt is full, it can suggest which bottle to discard by name and slot, whether to drink one, or whether to leave the reward.\n\nCompatibility: Windows x64, Steam public-beta v0.114.0. Subscribe, wait for the download, and launch the game from Steam. The mod sets up its own inference runtime and model. Keep an internet connection for the first launch so it can download and verify its data tables.",
   "visibility": "public",
-  "changeNote": "v0.2.6：ポーション枠が満タンの報酬画面で、枠番号とポーション名を示して破棄・使用・報酬の見送りを提案します。"
+  "changeNote": "v0.2.7 updates the Workshop description and repository README in English. The in-game advisor displays advice in Japanese."
 }
