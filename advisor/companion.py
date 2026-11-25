@@ -5,6 +5,13 @@ import sys
 import base64
 from pathlib import Path
 
+# Windows native loaders need extended paths when the private cache is deep in a user profile.
+if sys.platform == "win32":
+    for index, directory in enumerate(sys.path):
+        if Path(directory).name == "site-packages" and not directory.startswith("\\\\?\\"):
+            sys.path[index] = ("\\\\?\\UNC\\" + directory[2:] if directory.startswith("\\\\")
+                               else "\\\\?\\" + directory)
+
 import numpy as np
 import torch
 

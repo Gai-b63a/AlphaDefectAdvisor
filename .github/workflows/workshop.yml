@@ -150,7 +150,9 @@ jobs:
           $env:PROBE_PAYLOAD_HASH = (Get-FileHash package/runtime.zip).Hash
           dotnet build tests/runtime/RuntimeCheck.csproj -c Release -p:VmProbe=true
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python3 -I tests/runtime/replay_seed.py dotnet tests/runtime/bin/Release/net9.0/RuntimeCheck.dll package fixtures "$env:RUNNER_TEMP/Advisor VM"
+          $cache = Join-Path $env:RUNNER_TEMP 'Advisor VM'
+          if ($IsWindows) { $cache = Join-Path $cache (('profile-' * 10) + '/' + ('cache-' * 14)) }
+          python3 -I tests/runtime/replay_seed.py dotnet tests/runtime/bin/Release/net9.0/RuntimeCheck.dll package fixtures "$cache"
 
   release:
     if: github.ref == 'refs/heads/main'

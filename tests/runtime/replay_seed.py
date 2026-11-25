@@ -23,8 +23,10 @@ def main():
     for scene, line in zip(fixtures, lines):
         actual = json.loads(line)
         expected = scene["expected"]
+        # Identical card copies can exchange rank across CPU backends. Their target must still match.
+        equivalents = {label: group[0] for group in scene.get("identical_actions", []) for label in group}
         if len(actual) != len(expected) or any(
-            label != ref or not math.isclose(probability, target, abs_tol=0.0001)
+            equivalents.get(label, label) != equivalents.get(ref, ref) or not math.isclose(probability, target, abs_tol=0.0001)
             for (label, probability), (ref, target) in zip(actual, expected)
         ):
             raise ValueError(f"{scene['scene']}: expected {expected}, received {actual}")
