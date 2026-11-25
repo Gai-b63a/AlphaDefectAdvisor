@@ -1,0 +1,10 @@
+{
+  "id": "AlphaDefectAdvisor",
+  "name": "AlphaDefect Advisor",
+  "author": "AlphaDefect Advisor contributors",
+  "description": "Read-only Ironclad advice for v0.113.1",
+  "version": "0.2.0",
+  "has_pck": false,
+  "has_dll": true,
+  "affects_gameplay": false
+}
