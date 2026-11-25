@@ -10,5 +10,5 @@ $files = @('AlphaDefectAdvisor.dll','AlphaDefectAdvisor.json','runtime.zip','REA
 $dest = Join-Path $GameDir 'mods/AlphaDefectAdvisor'
 New-Item -Type Directory -Force $dest | Out-Null
 foreach ($item in $files) { Copy-Item -LiteralPath $item.FullName -Destination $dest -Force }
-Write-Host "Installed in $dest. Start the game from Steam and enable AlphaDefect Advisor."
+Write-Host "Installed in $dest."
 

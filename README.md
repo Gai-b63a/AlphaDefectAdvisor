@@ -32,6 +32,18 @@ $game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
 
 The build creates the Workshop upload workspace in `dist/workshop`. Use `-BuildPython` to select the build interpreter, `-Wheelhouse` for previously downloaded wheels, or `-CrtDir` for the CRT directory.
 
+## Playtest the repository build on Windows
+
+With the Windows build prerequisites above, double-click `tools/Play-Local.cmd`, or run the following in PowerShell 7 from the repository root:
+
+```powershell
+.\tools\Start-LocalGame.ps1
+```
+
+The launcher builds the advisor from your checkout, copies the installed v0.114.0 game to `runtime/local-playtest/game`, installs the build in that copy's `mods/AlphaDefectAdvisor`, and launches it with Steam integration disabled. It uses a separate offline game profile under `runtime/local-playtest/profile`. Launch the game normally from the Steam library to play with your subscriptions and Steam profile.
+
+Close the test game and rerun the command after editing the C# adapter. The launcher reuses the packaged inference runtime in `runtime/package/runtime.zip` when present. Pass `-RebuildRuntime` after editing the Python worker or changing its dependencies. Use `-GameDir` for a different Steam install location, or `-SmokeTest` to check local DLL initialization and exit automatically. Each launch writes a timestamped game log in `runtime/local-playtest`.
+
 ## Test a release candidate on Windows and macOS
 
 The development build includes an Apple Silicon inference runtime. In the **Steam Workshop** workflow, check both `vm-runtime-test` jobs for the candidate commit. They test recovery from a failed initial setup, offline restart, and the model's ranked actions and probabilities for the seeded opening, card selections and potion rewards. To verify the Steam installation and overlay in the running game:
