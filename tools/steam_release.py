@@ -66,10 +66,14 @@ def publish(exe, workspace):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["download", "update"])
-    parser.add_argument("exe", type=Path)
+    parser.add_argument("mode", choices=["download", "update", "prepare-create-vdf"])
+    parser.add_argument("path", type=Path)
+    parser.add_argument("--workspace", type=Path, default=Path("dist/workshop"))
     args = parser.parse_args()
-    exe = args.exe.resolve(strict=True)
+    if args.mode == "prepare-create-vdf":
+        write_vdf(args.path.resolve(), args.workspace.resolve(strict=True), "0")
+        raise SystemExit(0)
+    exe = args.path.resolve(strict=True)
     if not os.environ.get("STEAM_USERNAME"):
         parser.error("Configure STEAM_USERNAME in the steam-workshop environment")
     if args.mode == "download":
