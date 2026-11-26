@@ -6,6 +6,8 @@ The v0.2.8 development build follows the in-game language. It includes advisor t
 
 The mod targets Steam's **public-beta branch, game version v0.114.0**. The panel starts at the center-right of the screen. Drag its header with the left mouse button to move it. The mod remembers the position for your next session.
 
+See the [changelog](CHANGELOG.md) for changes in each version.
+
 ## Install from Steam
 
 1. [Subscribe to AlphaDefect Advisor on the Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3845626411).
@@ -57,6 +59,8 @@ The development build includes an Apple Silicon inference runtime. In the **Buil
 4. For the subscription test, restore the clean snapshot after the candidate is published. Subscribe in the guest's Steam client and launch the game. Record first-launch advice, the seven gameplay scenarios, and network failure and recovery. Keep manual-install results separate from subscription results. [Acceptance criteria and VM test checklist](REQUIREMENTS.md)
 
 ## Publish to the Steam Workshop
+
+Add an English `## X.Y.Z` section to `CHANGELOG.md` for each new mod version. GitHub Releases and Workshop change notes use that section.
 
 **Update the existing item.** Bump the mod version and merge it into `main`. PRs run checks for the affected components. A version increase on main triggers both platform builds and offline tests before GitHub Actions creates the release. Use Run workflow to repeat full verification, or to retry an unpublished version on main. When you are ready to publish, run `pwsh -File ./tools/Update-Workshop.ps1` under the Windows user account used for the first upload. It verifies the latest release, builds the mod, and submits it to Workshop item `3845626411`. The publishing PC needs PowerShell 7, the supported game version and Steam access to the existing item.
 

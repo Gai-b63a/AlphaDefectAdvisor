@@ -76,6 +76,11 @@ try {
                 ForEach-Object { Join-Path $src $_ } | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
             if (!$build) { throw 'Release contains no supported build script.' }
             Invoke-PrivateBuild $build @('-GameAssemblyDir',$cfg.game,'-RuntimeArchive',"$work/runtime.zip") "$store/last-build.log"
+            # Older, immutable releases shipped before CHANGELOG.md existed.
+            if (!(Test-Path -LiteralPath "$src/CHANGELOG.md")) {
+                . "$PSScriptRoot/package/ChangeLog.ps1"
+                Set-WorkshopNotes "$src/dist/workshop" $version (Read-ChangeLog "$PSScriptRoot/../CHANGELOG.md")
+            }
             & "$PSScriptRoot/package/Test-WorkshopPackage.ps1" -Workspace "$src/dist/workshop"
             if ($VerifyOnly) { Write-Host "Verified release $version for item $item."; return }
             if (!(Test-Path -LiteralPath $client)) {

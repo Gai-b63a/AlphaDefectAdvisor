@@ -64,4 +64,7 @@ foreach ($item in (Get-ChildItem -LiteralPath $content.FullName -Force)) {
 }
 foreach ($name in $files.Keys) { Copy-Item -LiteralPath "$out/$name" -Destination $content.FullName -Force }
 foreach ($name in @('workshop.json','image.png')) { Copy-Item -LiteralPath "$root/workshop/$name" -Destination $workshop -Force }
+. "$PSScriptRoot/ChangeLog.ps1"
+$version = (Get-Content -LiteralPath "$project/AlphaDefectAdvisor.json" -Raw | ConvertFrom-Json).version
+Set-WorkshopNotes $workshop $version (Read-ChangeLog "$root/CHANGELOG.md")
 Write-Host "Workshop workspace: $workshop"

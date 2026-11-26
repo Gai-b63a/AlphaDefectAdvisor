@@ -5,7 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
-    paths: ['advisor/AlphaDefectAdvisor.json']
+    paths: ['advisor/AlphaDefectAdvisor.json', 'CHANGELOG.md']
   workflow_dispatch:
 
 permissions:
@@ -26,8 +26,49 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Validate changelog
+        shell: pwsh
+        run: |
+          . ./tools/package/ChangeLog.ps1
+          $notes = Read-ChangeLog "$pwd/CHANGELOG.md"
+          $version = (Get-Content advisor/AlphaDefectAdvisor.json -Raw | ConvertFrom-Json).version
+          if (!$notes[$version]) { throw "Missing changelog entry for $version." }
       - id: select
         run: python3 .github/ci/plan.py
+
+  sync-release-notes:
+    needs: plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: sync-release-notes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Update descriptions of existing public releases
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          . ./tools/package/ChangeLog.ps1
+          $notes = Read-ChangeLog "$pwd/CHANGELOG.md"
+          $file = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          $pages = gh api --paginate --slurp 'repos/{owner}/{repo}/releases?per_page=100'
+          if ($LASTEXITCODE) { throw 'Could not list releases.' }
+          foreach ($page in (ConvertFrom-Json -InputObject ($pages -join "`n") -NoEnumerate)) {
+            foreach ($release in $page) {
+              if ($release.draft -or $release.tag_name -notmatch '^advisor-v(\d+\.\d+\.\d+)$') { continue }
+              $body = $notes[$Matches[1]]
+              if (!$body -or ([string]$release.body).Replace("`r`n","`n").Trim() -ceq $body) { continue }
+              [IO.File]::WriteAllText($file, $body)
+              gh release edit $release.tag_name --notes-file $file
+              if ($LASTEXITCODE) { throw "Could not update $($release.tag_name)." }
+            }
+          }
 
   scripts:
     needs: plan
@@ -185,6 +226,13 @@ jobs:
           New-Item -ItemType Directory -Force artifact | Out-Null
           [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path platforms), "$pwd/artifact/runtime.zip", [IO.Compression.CompressionLevel]::NoCompression, $false)
           ./tools/package/Test-WorkshopPackage.ps1 -Runtime artifact/runtime.zip
+      - name: Prepare version-specific release notes
+        shell: pwsh
+        run: |
+          . ./tools/package/ChangeLog.ps1
+          $notes = Read-ChangeLog "$pwd/CHANGELOG.md"
+          $version = (Get-Content advisor/AlphaDefectAdvisor.json -Raw | ConvertFrom-Json).version
+          [IO.File]::WriteAllText("$pwd/artifact/notes.md", $notes[$version])
       - name: Publish versioned build inputs for the local updater
         shell: bash
         env:
@@ -201,8 +249,8 @@ jobs:
           zip -qr artifact/build-source.zip upstream/engine/Sts2Headless
           # Upload to a draft so a partial upload cannot become the latest release.
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "AlphaDefect Advisor $version" --notes "Build inputs for the local Workshop updater."
+            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "AlphaDefect Advisor $version" --notes-file artifact/notes.md
           fi
           test "$(gh release view "$tag" --json targetCommitish --jq .targetCommitish)" = "$GITHUB_SHA"
           gh release upload "$tag" artifact/build-source.zip artifact/runtime.zip --clobber
-          gh release edit "$tag" --draft=false
+          gh release edit "$tag" --notes-file artifact/notes.md --draft=false
