@@ -45,5 +45,8 @@
   "missingFiles": "Mod dosyaları eksik. Atölye kurulumunu kontrol edin. Yeniden deneniyor…",
   "damagedFiles": "Dosyalar doğrulanamadı. Mod kurulumunu kontrol edin. Yeniden deneniyor…",
   "platformError": "Bu sürüm Windows x64 veya Apple Silicon işlemcili macOS gerektirir.",
-  "timeout": "Çıkarım zaman aşımına uğradı. İşlem yeniden başlatılıyor…"
+  "timeout": "Çıkarım zaman aşımına uğradı. İşlem yeniden başlatılıyor…",
+  "clearChance": "Koşuyu kazanma olasılığı: {0:P0} (oyun geçmişi)",
+  "clearReference": "Koşuyu kazanma olasılığı: {0:P0} (A10 için bu kattaki yapay zekâ sonuçları)",
+  "clearUnknown": "Tahmin yok: veri yetersiz veya koşu desteklenmiyor"
 }

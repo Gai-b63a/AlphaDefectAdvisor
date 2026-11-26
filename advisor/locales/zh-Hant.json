@@ -45,5 +45,8 @@
   "missingFiles": "缺少模組檔案。請檢查工作坊安裝狀態。正在重試…",
   "damagedFiles": "檔案驗證失敗。請檢查模組安裝狀態。正在重試…",
   "platformError": "此版本需要 Windows x64 或配備 Apple 晶片的 macOS。",
-  "timeout": "推論逾時。正在重新啟動推論程序…"
+  "timeout": "推論逾時。正在重新啟動推論程序…",
+  "clearChance": "目前通關機率預測：{0:P0}（遊玩紀錄）",
+  "clearReference": "目前通關機率預測：{0:P0}（A10 同層 AI 參考值）",
+  "clearUnknown": "目前通關機率預測：資料不足或不支援此模式"
 }

@@ -45,5 +45,8 @@
   "missingFiles": "Mancano alcuni file della mod. Controlla l’installazione dal Workshop. Nuovo tentativo…",
   "damagedFiles": "Verifica dei file non riuscita. Controlla l’installazione della mod. Nuovo tentativo…",
   "platformError": "Questa versione richiede Windows x64 o macOS su Apple Silicon.",
-  "timeout": "Tempo di calcolo scaduto. Riavvio del motore di inferenza…"
+  "timeout": "Tempo di calcolo scaduto. Riavvio del motore di inferenza…",
+  "clearChance": "Probabilità di vincere la partita: {0:P0} (cronologia)",
+  "clearReference": "Probabilità di vincere la partita: {0:P0} (riferimento IA per questo piano in A10)",
+  "clearUnknown": "Stima non disponibile: dati insufficienti o partita non supportata"
 }

@@ -45,5 +45,8 @@
   "missingFiles": "Faltam arquivos do mod. Verifique a instalação pelo Workshop. Tentando novamente…",
   "damagedFiles": "Falha na verificação dos arquivos. Verifique a instalação do mod. Tentando novamente…",
   "platformError": "Esta versão requer Windows x64 ou macOS com Apple Silicon.",
-  "timeout": "O cálculo excedeu o tempo limite. Reiniciando o motor de inferência…"
+  "timeout": "O cálculo excedeu o tempo limite. Reiniciando o motor de inferência…",
+  "clearChance": "Chance de vencer a partida: {0:P0} (histórico)",
+  "clearReference": "Chance de vencer a partida: {0:P0} (referência da IA neste andar em A10)",
+  "clearUnknown": "Estimativa indisponível: dados insuficientes ou partida incompatível"
 }

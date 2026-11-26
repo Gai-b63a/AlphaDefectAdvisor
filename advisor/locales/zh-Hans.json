@@ -45,5 +45,8 @@
   "missingFiles": "缺少模组文件。请检查创意工坊安装。正在重试…",
   "damagedFiles": "文件校验失败。请检查模组安装。正在重试…",
   "platformError": "此版本需要 Windows x64 或搭载 Apple 芯片的 macOS。",
-  "timeout": "推理超时。正在重启推理进程…"
+  "timeout": "推理超时。正在重启推理进程…",
+  "clearChance": "当前通关概率预测：{0:P0}（历史记录）",
+  "clearReference": "当前通关概率预测：{0:P0}（A10 同层 AI 参考值）",
+  "clearUnknown": "当前通关概率预测：数据不足或不支持此模式"
 }

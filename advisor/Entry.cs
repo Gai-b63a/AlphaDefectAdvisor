@@ -1,6 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Godot;
+using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Saves.Managers;
 using MegaCrit.Sts2.Core.Localization;
 using static AlphaDefectAdvisor.AdvisorText;
 using MegaCrit.Sts2.Core.Modding;
@@ -19,6 +23,9 @@ public static class Entry
     static Process? worker;
     static Task<RankedAction[]>? pending;
     static RankedAction[]? ranking;
+    static RunState? forecastRun;
+    static Task<RunClearHistory>? history;
+    static readonly AfterAdviceForecast forecast = new();
     static string? current;
     static long revision, requested;
     static ulong next, retry;
@@ -57,6 +64,8 @@ public static class Entry
             finally { worker.Dispose(); worker = null; }
         }
         pending = null;
+        forecastRun = null;
+        history = null;
         ranking = null;
         current = null;
         revision++;
@@ -94,6 +103,11 @@ public static class Entry
             if (state == null || state.Players.Count != 1 || state.Players[0].Character.Id.Entry != "IRONCLAD") {
                 Wait(T("ironclad")); return;
             }
+            if (!ReferenceEquals(forecastRun, state)) {
+                current = null;
+                history = null;
+                forecastRun = state;
+            }
             if (session == null) {
                 var catalog = Path.Combine(home, "upstream", "engine", "catalog");
                 Vocab.Load(Path.Combine(catalog, "vocab.txt"));
@@ -119,7 +133,11 @@ public static class Entry
                 if (requested == revision) ranking = result;
             }
             if (ranking != null) {
-                overlay.Show(AdvisorText.FormatRanking(state.TotalFloor, labels, ranking));
+                var advice = AdvisorText.FormatRanking(state.TotalFloor, labels, ranking);
+                if (forecast.Poll(revision, () => EstimateClearChance(state)) is { } value)
+                    advice += "\n" + (value.Chance is { } chance ?
+                        T(value.Reference ? "clearReference" : "clearChance", chance) : T("clearUnknown"));
+                overlay.Show(advice);
                 return;
             }
             overlay.Show(T("thinking"));
@@ -144,6 +162,25 @@ public static class Entry
             overlay.Show(T(errorKey));
             retry = now + 5000;
         }
+    }
+
+    static Task<ClearEstimate> EstimateClearChance(RunState state)
+    {
+        if (state.GameMode != GameMode.Standard || state.IsCustomGame || state.Modifiers.Count != 0)
+            return Task.FromResult(new ClearEstimate(null));
+
+        // Only read game objects on the game thread. History IO and matching run independently of the action worker.
+        var player = state.Players[0];
+        var snapshot = new ClearState(state.AscensionLevel, state.TotalFloor, player.Creature.CurrentHp,
+            player.Creature.MaxHp, player.Gold, (state.CurrentRoom as CombatRoom)?.Encounter?.Id.ToString());
+        if (history == null) {
+            int profile = SaveManager.Instance.CurrentProfileId;
+            var paths = new[] { false, true }.Select(modded => ProjectSettings.GlobalizePath(
+                UserDataPathProvider.GetAccountScopedBasePath(RunHistorySaveManager.GetHistoryPath(profile, modded)))).ToArray();
+            history = Task.Run(() => RunClearHistory.Load(paths));
+        }
+        var loaded = history;
+        return Task.Run(async () => (await loaded.ConfigureAwait(false)).Estimate(snapshot));
     }
 
     static void Wait(string message)

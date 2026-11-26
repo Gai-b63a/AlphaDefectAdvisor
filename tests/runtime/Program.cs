@@ -3,6 +3,7 @@ using System.Net;
 using System.Reflection;
 
 LocalizationChecks.Run();
+ClearHistoryChecks.Run();
 if (args is ["--check-localization"]) {
     Console.WriteLine("Localization checks passed.");
     return;

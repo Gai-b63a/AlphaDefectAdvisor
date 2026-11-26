@@ -45,5 +45,8 @@
   "missingFiles": "Brakuje plików moda. Sprawdź instalację z Warsztatu. Ponawianie…",
   "damagedFiles": "Weryfikacja plików nie powiodła się. Sprawdź instalację moda. Ponawianie…",
   "platformError": "Ta wersja wymaga Windows x64 lub macOS na komputerze z Apple Silicon.",
-  "timeout": "Upłynął limit czasu obliczeń. Ponowne uruchamianie procesu…"
+  "timeout": "Upłynął limit czasu obliczeń. Ponowne uruchamianie procesu…",
+  "clearChance": "Szansa na wygranie wyprawy: {0:P0} (historia gry)",
+  "clearReference": "Szansa na wygranie wyprawy: {0:P0} (wyniki SI na tym piętrze, A10)",
+  "clearUnknown": "Brak prognozy: za mało danych lub nieobsługiwany tryb"
 }

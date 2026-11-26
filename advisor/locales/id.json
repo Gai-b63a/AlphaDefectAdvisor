@@ -45,5 +45,8 @@
   "missingFiles": "Berkas mod tidak lengkap. Periksa pemasangan dari Workshop. Mencoba lagi…",
   "damagedFiles": "Verifikasi berkas gagal. Periksa pemasangan mod. Mencoba lagi…",
   "platformError": "Versi ini memerlukan Windows x64 atau macOS dengan Apple Silicon.",
-  "timeout": "Waktu inferensi habis. Memulai ulang proses inferensi…"
+  "timeout": "Waktu inferensi habis. Memulai ulang proses inferensi…",
+  "clearChance": "Peluang menang hingga akhir: {0:P0} (riwayat permainan)",
+  "clearReference": "Peluang menang hingga akhir: {0:P0} (acuan AI di lantai ini pada A10)",
+  "clearUnknown": "Perkiraan tidak tersedia: data kurang atau jenis permainan tidak didukung"
 }

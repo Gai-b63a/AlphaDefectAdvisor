@@ -22,6 +22,14 @@ The mod installs its own Python runtime, CPU inference libraries and official we
 
 The panel waits during enemy turns and on unsupported selection screens. The [acceptance criteria and VM test checklist](REQUIREMENTS.md) are available in Japanese.
 
+## Current run win estimate
+
+Once the ranked choices are visible, a separate task estimates the chance of clearing the **entire run**. A new choice appears immediately even if the previous estimate is still being calculated. The estimate is displayed below the action probabilities and does not change their ranking.
+
+For a standard solo Ironclad run, the advisor reads completed, non-abandoned games from the same local profile and Ascension. It compares runs that reached this floor using HP, maximum HP, gold and the current encounter when known. It uses the previous completed room's stats for historical comparisons. It does not simulate the remaining fights or estimate the effect of each card. Personal records stay on the device.
+
+With limited history on A10, the panel labels a separate **AI floor baseline** from 1,000 upstream Ironclad runs on v0.113.1. It depends only on the floor reached. At other Ascensions with insufficient history, or in unsupported modes, the panel reports that the estimate is unavailable. Calibration for individual play on v0.114.0 is unverified.
+
 ## Build on Windows
 
 Install the .NET 9 SDK, the supported game version, standard Windows x64 CPython 3.12 with pip, and the Visual Studio x64 redistributable CRT. Place the official weights-v6 file `ironclad_ema_v24782.pt` in the repository root. From the **Steam Workshop** GitHub Actions run for your commit, extract `upstream-source-<commit SHA>` into `upstream`. The build downloads CPU wheels from a hash-pinned list.

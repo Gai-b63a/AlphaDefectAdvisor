@@ -45,5 +45,8 @@
   "missingFiles": "Mod-Dateien fehlen. Prüfe die Workshop-Installation. Neuer Versuch …",
   "damagedFiles": "Dateiprüfung fehlgeschlagen. Prüfe die Mod-Installation. Neuer Versuch …",
   "platformError": "Diese Version erfordert Windows x64 oder macOS auf Apple Silicon.",
-  "timeout": "Zeitlimit überschritten. Die Modellberechnung wird neu gestartet …"
+  "timeout": "Zeitlimit überschritten. Die Modellberechnung wird neu gestartet …",
+  "clearChance": "Geschätzte Siegchance: {0:P0} (Spielverlauf)",
+  "clearReference": "Geschätzte Siegchance: {0:P0} (KI-Referenz für diese Ebene auf A10)",
+  "clearUnknown": "Siegchance: zu wenig Daten oder nicht unterstützter Lauf"
 }

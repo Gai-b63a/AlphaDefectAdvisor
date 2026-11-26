@@ -45,5 +45,8 @@
   "missingFiles": "Fichiers du mod manquants. Vérifiez l’installation Workshop. Nouvel essai…",
   "damagedFiles": "Échec de la vérification des fichiers. Vérifiez l’installation du mod. Nouvel essai…",
   "platformError": "Cette version nécessite Windows x64 ou macOS sur Apple Silicon.",
-  "timeout": "Le calcul a expiré. Redémarrage du moteur d’inférence…"
+  "timeout": "Le calcul a expiré. Redémarrage du moteur d’inférence…",
+  "clearChance": "Chance de gagner la partie : {0:P0} (historique)",
+  "clearReference": "Chance de gagner la partie : {0:P0} (référence IA à cet étage en A10)",
+  "clearUnknown": "Estimation indisponible : données insuffisantes ou partie non prise en charge"
 }

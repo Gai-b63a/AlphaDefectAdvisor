@@ -45,5 +45,8 @@
   "missingFiles": "Mod のファイルが見つかりません。導入状況を確認してください。再試行します",
   "damagedFiles": "初回データを検証できません。Mod の導入状況を確認してください。再試行します",
   "platformError": "対応環境は Windows x64 と Apple Silicon の macOS です",
-  "timeout": "推論がタイムアウトしました。推論プロセスを再起動します"
+  "timeout": "推論がタイムアウトしました。推論プロセスを再起動します",
+  "clearChance": "現在の勝率予測：{0:P0}（プレイ履歴）",
+  "clearReference": "現在の勝率予測：{0:P0}（A10・同じ階のAI参考値）",
+  "clearUnknown": "現在の勝率予測：データ不足・対象外"
 }

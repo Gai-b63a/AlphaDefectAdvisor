@@ -45,5 +45,8 @@
   "missingFiles": "Faltan archivos del mod. Comprueba la instalación del Workshop. Reintentando…",
   "damagedFiles": "Error al verificar los archivos. Comprueba la instalación del mod. Reintentando…",
   "platformError": "Esta versión requiere Windows x64 o macOS con Apple Silicon.",
-  "timeout": "Se agotó el tiempo de cálculo. Reiniciando el motor de inferencia…"
+  "timeout": "Se agotó el tiempo de cálculo. Reiniciando el motor de inferencia…",
+  "clearChance": "Probabilidad de ganar la partida: {0:P0} (historial)",
+  "clearReference": "Probabilidad de ganar la partida: {0:P0} (referencia de la IA en este piso, A10)",
+  "clearUnknown": "Estimación no disponible: faltan datos o la partida no es compatible"
 }

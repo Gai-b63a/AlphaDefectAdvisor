@@ -45,5 +45,8 @@
   "missingFiles": "Mod files are missing. Check the Workshop installation. Retrying…",
   "damagedFiles": "Setup verification failed. Check the mod installation. Retrying…",
   "platformError": "This build requires Windows x64 or Apple Silicon macOS.",
-  "timeout": "Inference timed out. Restarting the worker…"
+  "timeout": "Inference timed out. Restarting the worker…",
+  "clearChance": "Current run win estimate: {0:P0} (play history)",
+  "clearReference": "Current run win estimate: {0:P0} (A10 AI floor baseline)",
+  "clearUnknown": "Current run win estimate: insufficient data or unsupported run"
 }
