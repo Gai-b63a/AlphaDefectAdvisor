@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags: ['workshop-v*']
-    paths: ['.github/workflows/workshop.yml', 'advisor/**', 'tests/**', 'tools/*runtime*.py', 'tools/runtime-requirements.txt', 'tools/check_workshop.py']
+    paths: ['.github/workflows/workshop.yml', 'advisor/**', 'tests/**', 'tools/**', '.github/runtime/**']
     branches: [main]
 
 permissions:
@@ -62,7 +62,7 @@ jobs:
           set -euo pipefail
           gh release download weights-v6 --repo hmty-CHEN/AlphaDefect-Public --pattern ironclad_ema_v24782.pt
           uv python install 3.12.12
-          "$(uv python find --managed-python 3.12.12)" -I tools/build_macos_runtime.py artifact/osx-arm64.zip
+          "$(uv python find --managed-python 3.12.12)" -I .github/runtime/build_macos_runtime.py artifact/osx-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: mac-runtime-${{ github.sha }}
@@ -99,14 +99,13 @@ jobs:
           path: platforms
       - name: Build private CPU runtime and assemble both platforms
         run: |
-          python -I tools/build_runtime.py platforms/win-x64.zip
+          python -I .github/runtime/build_runtime.py platforms/win-x64.zip
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           New-Item -ItemType Directory -Force artifact | Out-Null
           [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path platforms), "$pwd/artifact/runtime.zip", [IO.Compression.CompressionLevel]::NoCompression, $false)
       - name: Verify payload and record source revision
         run: |
-          python -I tools/check_workshop.py --runtime artifact/runtime.zip
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./tools/package/Test-WorkshopPackage.ps1 -Runtime artifact/runtime.zip
           @{ commit = $env:GITHUB_SHA; sha256 = (Get-FileHash artifact/runtime.zip).Hash } |
             ConvertTo-Json | Set-Content -Encoding utf8 artifact/runtime.json
       - uses: actions/upload-artifact@v4

@@ -3,10 +3,6 @@
 /runs/
 /mod-package/
 /dist/
-/tools/build_watch.py
-/tools/extract_pck.py
-/tools/watch.html
-/tools/play-ironclad.ps1
 /ironclad-replay.html
 /.advisor-python
 /.venv/

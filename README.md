@@ -30,48 +30,35 @@ For a standard solo Ironclad run, the advisor reads completed, non-abandoned gam
 
 With limited history on A10, the panel labels a separate **AI floor baseline** from 1,000 upstream Ironclad runs on v0.113.1. It depends only on the floor reached. At other Ascensions with insufficient history, or in unsupported modes, the panel reports that the estimate is unavailable. Calibration for individual play on v0.114.0 is unverified.
 
-## Build on Windows
-
-Install the .NET 9 SDK, the supported game version, standard Windows x64 CPython 3.12 with pip, and the Visual Studio x64 redistributable CRT. Place the official weights-v6 file `ironclad_ema_v24782.pt` in the repository root. From the **Steam Workshop** GitHub Actions run for your commit, extract `upstream-source-<commit SHA>` into `upstream`. The build downloads CPU wheels from a hash-pinned list.
-
-```powershell
-$game = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2'
-.\tools\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64"
-.\tools\Install-Advisor.ps1 -GameDir $game
-```
-
-The build creates the Workshop upload workspace in `dist/workshop`. Use `-BuildPython` to select the build interpreter, `-Wheelhouse` for previously downloaded wheels, or `-CrtDir` for the CRT directory.
-
 ## Playtest the repository build on Windows
 
-With the Windows build prerequisites above, double-click `tools/Play-Local.cmd`, or run the following in PowerShell 7 from the repository root:
+Install PowerShell 7 on Windows x64 and the supported Steam game version. From the repository root run:
 
 ```powershell
-.\tools\Start-LocalGame.ps1
+pwsh -File ./tools/Play-Local.ps1
 ```
+
+The first launch downloads a pinned .NET SDK and verified build inputs from the v0.2.7 release into `runtime/toolchain`. A ZIP checkout works. The build uses the adapter and Python worker from your checkout. Python, Git, Visual Studio and a manually downloaded model are unnecessary on the playtest PC.
 
 The launcher builds the advisor from your checkout, copies the installed v0.114.0 game to `runtime/local-playtest/game`, installs the build in that copy's `mods/AlphaDefectAdvisor`, and launches it with Steam integration disabled. It uses a separate offline game profile under `runtime/local-playtest/profile`. Launch the game normally from the Steam library to play with your subscriptions and Steam profile.
 
-Close the test game and rerun the command after editing the C# adapter. The launcher reuses the packaged inference runtime in `runtime/package/runtime.zip` when present. Pass `-RebuildRuntime` after editing the Python worker or changing its dependencies. Use `-GameDir` for a different Steam install location, or `-SmokeTest` to check local DLL initialization and exit automatically. Each launch writes a timestamped game log in `runtime/local-playtest`.
+Each launch prepares the active offline modded profile for full-content testing. Start a new standard run to use the revealed timeline (including Neow), unlocked characters and ascensions, and completed tutorials. Existing runs keep their original map. A fresh test profile gets one recorded Ironclad loss to skip the scripted first run. This does not create a run history file or grant Steam achievements.
+
+Close the test game and rerun the command after editing the C# adapter. Worker changes automatically regenerate the Windows playtest runtime. Use `-GameDir` for a different Steam install location, `-PrepareOnly` to build and install without starting the game, or `-SmokeTest` to check local DLL initialization and exit automatically. Each launch writes a timestamped game log in `runtime/local-playtest`.
 
 ## Test a release candidate on Windows and macOS
 
 The development build includes an Apple Silicon inference runtime. In the **Steam Workshop** workflow, check both `vm-runtime-test` jobs for the candidate commit. They test recovery from a failed initial setup, offline restart, and the model's ranked actions and probabilities for the seeded opening, card selections and potion rewards. To verify the Steam installation and overlay in the running game:
 
-1. On the Windows build PC, check out the candidate commit and install the supported game version. Extract `upstream-source-<commit SHA>` from that workflow run into `upstream` so that `upstream/engine/Sts2Headless` exists. Extract `workshop-runtime-<commit SHA>` from the same run into a separate folder.
-2. Pass the folder containing `runtime.json` and `runtime.zip` to the build. It checks the commit and archive hash before building the DLL. Use the same `dist/AlphaDefectAdvisor` folder for both guests.
-
-   ```powershell
-   .\tools\Build-Advisor.ps1 -GameAssemblyDir "$game\data_sts2_windows_x86_64" -RuntimeArtifactDir C:\AdvisorTest\artifact
-   .\tools\Test-WorkshopPackage.ps1 -Workspace .\dist\workshop
-   ```
+1. Obtain the candidate revision's source bundle and verified two-platform runtime from its workflow run.
+2. Build that source against the installed game with the bundled SDK and verify the resulting Workshop package. For a published GitHub release, run `pwsh -File ./tools/Update-Workshop.ps1 -VerifyOnly` to perform these steps without contacting Steam.
 
 3. Install Steam and game v0.114.0 in a Windows 11 x64 guest and an Apple Silicon macOS guest. Disconnect shared folders, verify rendering and input in the base game, and save a snapshot before installing or subscribing to the mod. To test an unpublished candidate, clone the snapshot and copy the distribution folder into the game's `mods` directory.
 4. For the subscription test, restore the clean snapshot after the candidate is published. Subscribe in the guest's Steam client and launch the game. Record first-launch advice, the seven gameplay scenarios, and network failure and recovery. Keep manual-install results separate from subscription results. [Acceptance criteria and VM test checklist](REQUIREMENTS.md)
 
 ## Publish to the Steam Workshop
 
-**Update the existing item.** Bump the mod version and merge it into `main`. GitHub Actions creates a release. When you are ready to publish, run `Update-Workshop.cmd` under the Windows user account used for the first upload. It verifies the latest release, builds the mod, and submits it to Workshop item `3845626411`. The publishing PC needs the .NET 9 SDK, Python 3.11 or later, PowerShell 7 and the supported game version.
+**Update the existing item.** Bump the mod version and merge it into `main`. GitHub Actions creates a release. When you are ready to publish, run `pwsh -File ./tools/Update-Workshop.ps1` under the Windows user account used for the first upload. It verifies the latest release, builds the mod, and submits it to Workshop item `3845626411`. The publishing PC needs PowerShell 7, the supported game version and Steam access to the existing item.
 
 The updater writes its log to `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log`. If the upload result is unclear, run the updater again. It checks SteamCMD's completion record for the previous build and item. A matching record marks the version as published without sending it again. If verification is inconclusive, the updater pauses so you can check the item's Workshop change history. If you previously installed the scheduled task named `AlphaDefect Advisor Workshop Update`, disable it in Windows Task Scheduler.
 

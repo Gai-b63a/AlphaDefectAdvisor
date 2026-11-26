@@ -22,7 +22,7 @@ def main():
     with tempfile.TemporaryDirectory(dir=args.output.parent) as temp:
         wheels = Path(temp) / "packages"
         subprocess.run(["uv", "pip", "install", "--python", sys.executable, "--target", str(wheels),
-                        "--only-binary", ":all:", "--require-hashes", "-r", str(ROOT / "tools/runtime-requirements.txt")],
+                        "--only-binary", ":all:", "--require-hashes", "-r", str(ROOT / ".github/runtime/runtime-requirements.txt")],
                        check=True)
         with ZipFile(args.output, "w", ZIP_DEFLATED, compresslevel=3) as out:
             out.write(base / "bin/python3.12", "python/bin/python3.12")
