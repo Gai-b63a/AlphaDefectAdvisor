@@ -1,7 +1,8 @@
 [CmdletBinding(DefaultParameterSetName='Workspace')]
 param(
     [Parameter(Mandatory,ParameterSetName='Workspace')][string]$Workspace,
-    [Parameter(Mandatory,ParameterSetName='Runtime')][string]$Runtime
+    [Parameter(Mandatory,ParameterSetName='Runtime')][string]$Runtime,
+    [Parameter(ParameterSetName='Runtime')][ValidateSet('win-x64','osx-arm64')][string]$Platform
 )
 $ErrorActionPreference = 'Stop'
 function Test-Payload($path, $platform) {
@@ -39,7 +40,7 @@ function Test-Payload($path, $platform) {
         }
     } finally { $zip.Dispose() }
 }
-if ($Runtime) { Test-Payload (Resolve-Path $Runtime).Path; return }
+if ($Runtime) { Test-Payload (Resolve-Path $Runtime).Path $Platform; return }
 $content = Join-Path $Workspace 'content'
 $expected = 'AlphaDefectAdvisor.dll','AlphaDefectAdvisor.json','LICENSE','README.md','AlphaDefect-LICENSE.txt','AlphaDefect-NOTICE.md','runtime.zip'
 $files = @(Get-ChildItem -Force -LiteralPath $content)

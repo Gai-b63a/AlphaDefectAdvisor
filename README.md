@@ -48,9 +48,9 @@ Close the test game and rerun the command after editing the C# adapter. Worker c
 
 ## Test a release candidate on Windows and macOS
 
-The development build includes an Apple Silicon inference runtime. In the **Steam Workshop** workflow, check both `vm-runtime-test` jobs for the candidate commit. They test recovery from a failed initial setup, offline restart, and the model's ranked actions and probabilities for the seeded opening, card selections and potion rewards. To verify the Steam installation and overlay in the running game:
+The development build includes an Apple Silicon inference runtime. In the **Build and test release** workflow, check both `runtime-test` jobs for the candidate commit. They test recovery from a failed initial setup, offline restart, and the model's ranked actions and probabilities for the seeded opening, card selections and potion rewards. To verify the Steam installation and overlay in the running game:
 
-1. Obtain the candidate revision's source bundle and verified two-platform runtime from its workflow run.
+1. Use the candidate revision’s upstream-source artifact and the two tested platform archives from a full workflow run. The versioned GitHub Release contains the assembled runtime and build source.
 2. Build that source against the installed game with the bundled SDK and verify the resulting Workshop package. For a published GitHub release, run `pwsh -File ./tools/Update-Workshop.ps1 -VerifyOnly` to perform these steps without contacting Steam.
 
 3. Install Steam and game v0.114.0 in a Windows 11 x64 guest and an Apple Silicon macOS guest. Disconnect shared folders, verify rendering and input in the base game, and save a snapshot before installing or subscribing to the mod. To test an unpublished candidate, clone the snapshot and copy the distribution folder into the game's `mods` directory.
@@ -58,7 +58,7 @@ The development build includes an Apple Silicon inference runtime. In the **Stea
 
 ## Publish to the Steam Workshop
 
-**Update the existing item.** Bump the mod version and merge it into `main`. GitHub Actions creates a release. When you are ready to publish, run `pwsh -File ./tools/Update-Workshop.ps1` under the Windows user account used for the first upload. It verifies the latest release, builds the mod, and submits it to Workshop item `3845626411`. The publishing PC needs PowerShell 7, the supported game version and Steam access to the existing item.
+**Update the existing item.** Bump the mod version and merge it into `main`. PRs run checks for the affected components. A version increase on main triggers both platform builds and offline tests before GitHub Actions creates the release. Use Run workflow to repeat full verification, or to retry an unpublished version on main. When you are ready to publish, run `pwsh -File ./tools/Update-Workshop.ps1` under the Windows user account used for the first upload. It verifies the latest release, builds the mod, and submits it to Workshop item `3845626411`. The publishing PC needs PowerShell 7, the supported game version and Steam access to the existing item.
 
 The updater writes its log to `%LOCALAPPDATA%/AlphaDefectAdvisor/publisher/update.log`. If the upload result is unclear, run the updater again. It checks SteamCMD's completion record for the previous build and item. A matching record marks the version as published without sending it again. If verification is inconclusive, the updater pauses so you can check the item's Workshop change history. If you previously installed the scheduled task named `AlphaDefect Advisor Workshop Update`, disable it in Windows Task Scheduler.
 
