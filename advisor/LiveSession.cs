@@ -1,3 +1,4 @@
+using static AlphaDefectAdvisor.AdvisorText;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Events;
@@ -29,26 +30,26 @@ public sealed partial class RunSession
     static IEnumerable<T> Visible<T>(Node root) where T : Control =>
         root.FindChildren("*", "", true, false).OfType<T>().Where(n => n.IsVisibleInTree());
 
-    internal string WaitReason { get; private set; } = "選択待ち";
+    internal string WaitReason { get; private set; } = T("waiting");
 
     internal Decision? Inspect()
     {
         _selecting = null;
         _selected.Clear();
-        WaitReason = "選択待ち";
+        WaitReason = T("waiting");
         var currentScreen = ActiveScreenContext.Instance.GetCurrentScreen();
         if (currentScreen is NMapScreen { IsOpen: true } map)
         {
-            if (map.IsTraveling) { WaitReason = "次の部屋へ移動中"; return null; }
+            if (map.IsTraveling) { WaitReason = T("travel"); return null; }
             if (!map.IsTravelEnabled) {
-                WaitReason = "マップを閲覧中。左下の矢印で戻り、部屋の選択を終えてください";
+                WaitReason = T("mapView");
                 return null;
             }
             var d = new Decision(DecisionKind.Map);
             foreach (var button in Visible<NMapPoint>(map).Where(x => x.State == MapPointState.Travelable).OrderBy(x => x.Point.coord.col))
             {
                 var p = button.Point;
-                d.Add(ActionKind.MapMove, $"{p.coord.row+1}行 {p.coord.col+1}列 · {MapLabel(p.PointType)}", () => {}, a:p);
+                d.Add(ActionKind.MapMove, T("mapMove", p.coord.row+1, p.coord.col+1, MapLabel(p.PointType)), () => {}, a:p);
             }
             if (d.Choices.Count == 0) WaitReason = "選択できる移動先を待っています";
             return d;
@@ -85,7 +86,7 @@ public sealed partial class RunSession
         {
             var d = new Decision(DecisionKind.Shop);
             AddShopEntries(d, shop.Inventory);
-            d.Add(ActionKind.Leave, "買い物を終える", () => {});
+            d.Add(ActionKind.Leave, T("finishShop"), () => {});
             AddPotionActions(d);
             return d;
         }
@@ -123,33 +124,33 @@ public sealed partial class RunSession
             }
         }
         if (canProceed)
-            decision.Add(ActionKind.Leave, needsSlot ? "残りの報酬を見送って先に進む" : "先に進む", () => {});
+            decision.Add(ActionKind.Leave, needsSlot ? T("leaveRewards") : T("proceed"), () => {});
         AddPotionActions(decision);
         if (needsSlot) AddPotionDiscards(decision);
         return decision;
     }
 
     static string MapLabel(MapPointType type) => type switch {
-        MapPointType.Monster => "通常戦闘", MapPointType.Elite => "エリート",
-        MapPointType.RestSite => "休憩所", MapPointType.Shop => "商店",
-        MapPointType.Boss => "ボス", MapPointType.Unknown => "未知",
-        _ when type.ToString() == "Treasure" => "宝箱", _ => "移動先"
+        MapPointType.Monster => T("monster"), MapPointType.Elite => T("elite"),
+        MapPointType.RestSite => T("rest"), MapPointType.Shop => T("shop"),
+        MapPointType.Boss => T("boss"), MapPointType.Unknown => T("unknown"),
+        _ when type.ToString() == "Treasure" => T("treasure"), _ => T("destination")
     };
     static bool RunManagerBusy() => MegaCrit.Sts2.Core.Runs.RunManager.Instance.ActionExecutor.IsRunning;
     internal static string Describe(Choice c)
     {
-        var target = c.B is Creature t ? (t.IsPlayer ? " → 自分" : $" → {t.Name}（HP {t.CurrentHp}・ID {t.CombatId}）") : "";
+        var target = c.B is Creature t ? (t.IsPlayer ? T("targetSelf") : T("targetEnemy", t.Name, t.CurrentHp, t.CombatId)) : "";
         return c.Kind switch {
-            ActionKind.EndTurn => "ターン終了",
-            ActionKind.PlayCard when c.A is CardModel card => $"{card.Title} を使用{target}",
-            ActionKind.UsePotion when c.A is PotionModel potion => $"{potion.Title.GetFormattedText()} を使用{target}",
-            ActionKind.DiscardPotion when c.A is PotionModel discarded => $"枠{Me.GetPotionSlotIndex(discarded) + 1}の{discarded.Title.GetFormattedText()}を捨てて空きを作る",
-            ActionKind.Buy => (c.A switch {
+            ActionKind.EndTurn => T("endTurn"),
+            ActionKind.PlayCard when c.A is CardModel card => T("play", card.Title, target),
+            ActionKind.UsePotion when c.A is PotionModel potion => T("drink", potion.Title.GetFormattedText(), target),
+            ActionKind.DiscardPotion when c.A is PotionModel discarded => T("discard", Me.GetPotionSlotIndex(discarded) + 1, discarded.Title.GetFormattedText()),
+            ActionKind.Buy => T("buy", c.A switch {
                 CardModel a => a.Title,
                 RelicModel a => a.Title.GetFormattedText(),
                 PotionModel a => a.Title.GetFormattedText(),
-                _ => "カード除去"
-            }) + $"（{c.F0} G）",
+                _ => T("remove")
+            }, c.F0),
             _ => c.Label
         };
     }

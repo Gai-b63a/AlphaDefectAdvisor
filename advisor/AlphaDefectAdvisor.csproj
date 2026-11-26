@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net9.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AllowUnsafeBlocks>true</AllowUnsafeBlocks><GameDir>$(MSBuildProjectDirectory)/../runtime/game/v0.114.0</GameDir></PropertyGroup>
+  <PropertyGroup><TargetFramework>net9.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AllowUnsafeBlocks>true</AllowUnsafeBlocks><GameDir>$(MSBuildProjectDirectory)/../runtime/game/v0.114.0</GameDir><UpstreamDir Condition="'$(UpstreamDir)' == ''">$(MSBuildProjectDirectory)/../upstream</UpstreamDir></PropertyGroup>
   <ItemGroup>
-    <Compile Include="../upstream/engine/Sts2Headless/**/*.cs" Exclude="../upstream/engine/Sts2Headless/obj/**;../upstream/engine/Sts2Headless/bin/**;../upstream/engine/Sts2Headless/Program.cs;../upstream/engine/Sts2Headless/Engine/RunSession.cs;../upstream/engine/Sts2Headless/Engine/Obs/Characters/Fool.cs;../upstream/engine/Sts2Headless/Engine/Obs/Gains26.cs"/>
+    <EmbeddedResource Include="locales/*.json" LogicalName="AdvisorText.%(Filename).json" />
+    <Compile Include="$(UpstreamDir)/engine/Sts2Headless/**/*.cs" Exclude="$(UpstreamDir)/engine/Sts2Headless/obj/**;$(UpstreamDir)/engine/Sts2Headless/bin/**;$(UpstreamDir)/engine/Sts2Headless/Program.cs;$(UpstreamDir)/engine/Sts2Headless/Engine/RunSession.cs;$(UpstreamDir)/engine/Sts2Headless/Engine/Obs/Characters/Fool.cs;$(UpstreamDir)/engine/Sts2Headless/Engine/Obs/Gains26.cs"/>
     <Compile Include="obj/LiveRunSession.cs;obj/LiveFool.cs;obj/LiveGains26.cs" />
     <Compile Include="obj/PayloadInfo.cs" />
     <Reference Include="sts2" HintPath="$(GameDir)/sts2.dll" Private="false"/><Reference Include="GodotSharp" HintPath="$(GameDir)/GodotSharp.dll" Private="false"/><Reference Include="0Harmony" HintPath="$(GameDir)/0Harmony.dll" Private="false"/>

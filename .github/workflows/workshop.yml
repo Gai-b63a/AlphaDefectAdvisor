@@ -1,17 +1,62 @@
-name: Steam Workshop
+name: Build and test release
 
 on:
-  workflow_dispatch:
-  push:
-    tags: ['workshop-v*']
-    paths: ['.github/workflows/workshop.yml', 'advisor/**', 'tests/**', 'tools/*runtime*.py', 'tools/runtime-requirements.txt', 'tools/check_workshop.py']
+  pull_request:
     branches: [main]
+  push:
+    branches: [main]
+    paths: ['advisor/AlphaDefectAdvisor.json']
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      scripts: ${{ steps.select.outputs.scripts }}
+      advice: ${{ steps.select.outputs.advice }}
+      runtime: ${{ steps.select.outputs.runtime }}
+      matrix: ${{ steps.select.outputs.matrix }}
+      publish: ${{ steps.select.outputs.publish }}
+      version: ${{ steps.select.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: select
+        run: python3 .github/ci/plan.py
+
+  scripts:
+    needs: plan
+    if: needs.plan.outputs.scripts == 'true'
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: ./tests/Test-Tooling.ps1
+        shell: pwsh
+
+  advice:
+    needs: plan
+    if: needs.plan.outputs.advice == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - run: python3 -I -m unittest discover -s tests -v
+      - run: dotnet run --project tests/runtime/RuntimeCheck.csproj -c Release -- --check-localization
+
   upstream:
+    needs: plan
+    if: needs.plan.outputs.runtime == 'true'
     runs-on: ubuntu-latest
     steps:
       # Training archives outside these paths contain names Windows cannot check out.
@@ -41,42 +86,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  mac-runtime:
-    needs: upstream
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: upstream-source-${{ github.sha }}
-          path: upstream
-      - uses: astral-sh/setup-uv@v6
-        with:
-          version: '0.9.12'
-      - name: Package relocatable Apple Silicon interpreter and CPU model
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release download weights-v6 --repo hmty-CHEN/AlphaDefect-Public --pattern ironclad_ema_v24782.pt
-          uv python install 3.12.12
-          "$(uv python find --managed-python 3.12.12)" -I tools/build_macos_runtime.py artifact/osx-arm64.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac-runtime-${{ github.sha }}
-          path: artifact/osx-arm64.zip
-          compression-level: 0
-          retention-days: 2
-
-  runtime:
-    needs: [upstream, mac-runtime]
-    runs-on: windows-2022
-    timeout-minutes: 45
-    defaults:
-      run:
-        shell: pwsh
+  runtime-test:
+    needs: [plan, upstream]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -86,48 +102,32 @@ jobs:
           name: upstream-source-${{ github.sha }}
           path: upstream
       - uses: actions/setup-python@v5
+        if: runner.os == 'Windows'
         with:
           python-version: '3.12'
           architecture: x64
-      - name: Download official model
+      - uses: astral-sh/setup-uv@v6
+        if: runner.os == 'macOS'
+        with:
+          version: '0.9.12'
+      - name: Download pinned model release
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download weights-v6 --repo hmty-CHEN/AlphaDefect-Public --pattern ironclad_ema_v24782.pt
-      - uses: actions/download-artifact@v4
-        with:
-          name: mac-runtime-${{ github.sha }}
-          path: platforms
-      - name: Build private CPU runtime and assemble both platforms
+      - name: Build Windows runtime
+        if: runner.os == 'Windows'
+        run: python -I .github/runtime/build_runtime.py platform/win-x64.zip
+      - name: Build macOS runtime
+        if: runner.os == 'macOS'
         run: |
-          python -I tools/build_runtime.py platforms/win-x64.zip
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          New-Item -ItemType Directory -Force artifact | Out-Null
-          [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path platforms), "$pwd/artifact/runtime.zip", [IO.Compression.CompressionLevel]::NoCompression, $false)
-      - name: Verify payload and record source revision
+          uv python install 3.12.12
+          "$(uv python find --managed-python 3.12.12)" -I .github/runtime/build_macos_runtime.py platform/osx-arm64.zip
+      - name: Verify platform and exercise the shipping archive layout
+        shell: pwsh
         run: |
-          python -I tools/check_workshop.py --runtime artifact/runtime.zip
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          @{ commit = $env:GITHUB_SHA; sha256 = (Get-FileHash artifact/runtime.zip).Hash } |
-            ConvertTo-Json | Set-Content -Encoding utf8 artifact/runtime.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: workshop-runtime-${{ github.sha }}
-          path: artifact/
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 14
-
-  vm-runtime-test:
-    needs: runtime
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-2022, macos-15]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+          ./tools/package/Test-WorkshopPackage.ps1 -Runtime platform/${{ matrix.rid }}.zip -Platform ${{ matrix.rid }}
+          New-Item -ItemType Directory -Force package | Out-Null
+          [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path platform), "$pwd/package/runtime.zip", [IO.Compression.CompressionLevel]::NoCompression, $false)
       - name: Fetch the five versioned tables for the simulated first download
         shell: pwsh
         run: |
@@ -137,10 +137,6 @@ jobs:
             New-Item -ItemType Directory -Force (Split-Path $file) | Out-Null
             Invoke-WebRequest "$base/$name" -OutFile $file
           }
-      - uses: actions/download-artifact@v4
-        with:
-          name: workshop-runtime-${{ github.sha }}
-          path: package
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
@@ -153,15 +149,22 @@ jobs:
           $cache = Join-Path $env:RUNNER_TEMP 'Advisor VM'
           if ($IsWindows) { $cache = Join-Path $cache (('profile-' * 10) + '/' + ('cache-' * 14)) }
           python3 -I tests/runtime/replay_seed.py dotnet tests/runtime/bin/Release/net9.0/RuntimeCheck.dll package fixtures "$cache"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: platform-${{ matrix.rid }}-${{ github.sha }}
+          path: platform/*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
 
   release:
-    if: github.ref == 'refs/heads/main'
-    needs: [upstream, runtime, vm-runtime-test]
+    if: needs.plan.outputs.publish == 'true' && github.ref == 'refs/heads/main'
+    needs: [plan, scripts, advice, upstream, runtime-test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     concurrency:
-      group: workshop-release
+      group: workshop-release-${{ needs.plan.outputs.version }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
@@ -173,8 +176,15 @@ jobs:
           path: upstream
       - uses: actions/download-artifact@v4
         with:
-          name: workshop-runtime-${{ github.sha }}
-          path: artifact
+          pattern: platform-*-${{ github.sha }}
+          path: platforms
+          merge-multiple: true
+      - name: Assemble and verify both tested platforms
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifact | Out-Null
+          [IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path platforms), "$pwd/artifact/runtime.zip", [IO.Compression.CompressionLevel]::NoCompression, $false)
+          ./tools/package/Test-WorkshopPackage.ps1 -Runtime artifact/runtime.zip
       - name: Publish versioned build inputs for the local updater
         shell: bash
         env:
@@ -183,10 +193,16 @@ jobs:
           set -euo pipefail
           version=$(jq -er '.version | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' advisor/AlphaDefectAdvisor.json)
           tag="advisor-v$version"
-          if gh release view "$tag" >/dev/null 2>&1; then
+          if [[ "$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || true)" == false ]]; then
             echo "Version $version already has a release."
             exit 0
           fi
           git archive --format=zip --output=artifact/build-source.zip HEAD
           zip -qr artifact/build-source.zip upstream/engine/Sts2Headless
-          gh release create "$tag" artifact/build-source.zip artifact/runtime.zip --target "$GITHUB_SHA" --title "AlphaDefect Advisor $version" --notes "Build inputs for the local Workshop updater."
+          # Upload to a draft so a partial upload cannot become the latest release.
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "AlphaDefect Advisor $version" --notes "Build inputs for the local Workshop updater."
+          fi
+          test "$(gh release view "$tag" --json targetCommitish --jq .targetCommitish)" = "$GITHUB_SHA"
+          gh release upload "$tag" artifact/build-source.zip artifact/runtime.zip --clobber
+          gh release edit "$tag" --draft=false

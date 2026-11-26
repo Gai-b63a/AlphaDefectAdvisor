@@ -8,6 +8,11 @@
   <PropertyGroup Condition="'$(VmProbe)' == 'true'">
     <DefineConstants>$(DefineConstants);VM_PROBE</DefineConstants>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../advisor/AdvisorText.cs" />
+    <Compile Include="../../advisor/RunClearHistory.cs" />
+    <EmbeddedResource Include="../../advisor/locales/*.json" LogicalName="AdvisorText.%(Filename).json" />
+  </ItemGroup>
   <ItemGroup Condition="'$(VmProbe)' == 'true'">
     <Compile Include="../../advisor/AdvisorRuntime.cs" />
   </ItemGroup>

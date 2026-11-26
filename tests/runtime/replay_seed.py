@@ -16,14 +16,17 @@ def main():
     for scene in fixtures:
         frame = gzip.decompress(base64.b64decode(scene["frame"]))
         requests.append(json.dumps({"frame": base64.b64encode(frame).decode(),
-                                    "labels": [str(i) for i in range(scene["count"])]}))
+                                    "labels": list(range(scene["count"]))}))
     result = subprocess.run(sys.argv[1:], input="\n".join(requests) + "\n", text=True,
                             stdout=subprocess.PIPE, timeout=300, check=True)
     lines = result.stdout.splitlines()
     if len(lines) != len(fixtures):
         raise ValueError(f"Expected {len(fixtures)} decisions, received {len(lines)}")
     for scene, line in zip(fixtures, lines):
-        actual = json.loads(line)
+        ranked = json.loads(line)
+        if any(type(index) is not int or not 0 <= index < scene["count"] for index, _ in ranked):
+            raise ValueError(f"Invalid action index: {ranked}")
+        actual = [(str(index), probability) for index, probability in ranked]
         expected = scene["expected"]
         # Identical card copies can exchange rank across CPU backends. Their target must still match.
         equivalents = {label: group[0] for group in scene.get("identical_actions", []) for label in group}

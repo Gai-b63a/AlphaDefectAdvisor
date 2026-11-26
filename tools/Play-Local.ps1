@@ -1,7 +1,8 @@
 #Requires -Version 7.0
 param(
-    [string]$GameDir = 'E:\SteamLibrary\steamapps\common\Slay the Spire 2',
+    [string]$GameDir,
     [switch]$RebuildRuntime,
+    [switch]$PrepareOnly,
     [switch]$SmokeTest
 )
 $ErrorActionPreference = 'Stop'
@@ -14,15 +15,17 @@ if (Get-Process -Name SlayTheSpire2 -ErrorAction SilentlyContinue | Where-Object
     throw 'Close the local test game before rebuilding it.'
 }
 
+. "$PSScriptRoot/package/Dependencies.ps1"
+if (!$GameDir) { $GameDir = Find-GameDirectory }
+$GameDir = (Resolve-Path -LiteralPath $GameDir).Path
 $buildArgs = @{ GameAssemblyDir = Join-Path $GameDir 'data_sts2_windows_x86_64' }
-$archive = Join-Path $root 'runtime/package/runtime.zip'
-if (!$RebuildRuntime -and (Test-Path -LiteralPath $archive)) { $buildArgs.RuntimeArchive = $archive }
-& "$PSScriptRoot/Build-Advisor.ps1" @buildArgs
+$inputs = Get-PlaytestInputs $root $RebuildRuntime.IsPresent
+Invoke-PrivateBuild "$PSScriptRoot/package/Build-Advisor.ps1" @('-GameAssemblyDir',$buildArgs.GameAssemblyDir,'-RuntimeArchive',$inputs.Archive,'-UpstreamDir',$inputs.Upstream)
 
 # Use a separate executable directory: the retail loader discovers its local mods here.
 & robocopy.exe $GameDir $game /E /XD mods /XF steam_appid.txt /XJ /R:1 /W:1 /NFL /NDL /NJH /NJS /NP
 if ($LASTEXITCODE -ge 8) { throw "Copying the game failed (robocopy $LASTEXITCODE)." }
-& "$PSScriptRoot/Install-Advisor.ps1" -GameDir $game
+& "$PSScriptRoot/playtest/Install-Advisor.ps1" -GameDir $game
 
 # Seed a new offline profile with only the local advisor enabled. Keep later player settings.
 $settingsDir = Join-Path $profile 'SlayTheSpire2/default/1'
@@ -37,6 +40,9 @@ if (!(Test-Path -LiteralPath $settings)) {
         }
     } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $settings -Encoding utf8NoBOM
 }
+
+& "$PSScriptRoot/playtest/Initialize-LocalProgress.ps1"
+if ($PrepareOnly) { Write-Host "Prepared local test game: $exe"; return }
 
 $log = Join-Path $testRoot ("game-{0:yyyyMMdd-HHmmssfff}.log" -f (Get-Date))
 $start = [Diagnostics.ProcessStartInfo]::new($exe)
